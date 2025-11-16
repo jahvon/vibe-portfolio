@@ -926,11 +926,23 @@
         function playCharacterAnimation() {
             // Play GLB animation if available, otherwise use fallback animation
             if (characterActions && characterActions.length > 0) {
+                // Stop all currently playing actions first
+                characterActions.forEach(a => a.stop());
+
                 // Play first animation (clap)
                 const action = characterActions[0];
-                action.reset();  // Reset to start
-                action.play();   // Play the animation
+                action.reset();           // Reset to beginning
+                action.setEffectiveWeight(1);  // Ensure full weight
+                action.setEffectiveTimeScale(1);  // Normal speed
+                action.paused = false;    // Make sure not paused
+                action.enabled = true;    // Enable the action
+                action.play();            // Start playing
+
                 console.log('Playing GLB animation:', action.getClip().name);
+                console.log('  Duration:', action.getClip().duration, 'seconds');
+                console.log('  Action enabled:', action.enabled);
+                console.log('  Action paused:', action.paused);
+                console.log('  Action time:', action.time);
             } else if (character && character.userData.head && character.userData.body) {
                 // Fallback: animate individual parts for non-GLB character
                 console.log('No GLB animations available, using fallback animation');
@@ -949,6 +961,14 @@
             // Update animation mixer for GLB animations
             if (mixer) {
                 mixer.update(delta);
+
+                // Debug: Log active actions occasionally
+                if (Math.random() < 0.01) {  // ~1% of frames
+                    const activeActions = characterActions.filter(a => a.isRunning());
+                    if (activeActions.length > 0) {
+                        console.log('Active animations:', activeActions.length, 'Time:', activeActions[0].time.toFixed(2));
+                    }
+                }
             }
 
             // Character animation trigger - plays ONCE every 60 seconds OR when clicked
