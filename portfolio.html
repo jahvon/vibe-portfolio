@@ -627,9 +627,9 @@
                         console.log('=============================');
 
                         // Select animations by index (more reliable than name matching)
-                        // CHANGE THESE INDICES if the animations are in different order:
-                        const IDLE_ANIMATION_INDEX = 0;     // Change this to the index of standing/idle animation
-                        const CLAPPING_ANIMATION_INDEX = 1; // Change this to the index of clapping animation
+                        // Based on GLB: [0]=Clapping, [2]=Idle
+                        const IDLE_ANIMATION_INDEX = 2;     // Man_Idle (4.17s)
+                        const CLAPPING_ANIMATION_INDEX = 0; // Man_Clapping (1.67s)
 
                         if (gltf.animations[IDLE_ANIMATION_INDEX]) {
                             idleAction = mixer.clipAction(gltf.animations[IDLE_ANIMATION_INDEX]);
