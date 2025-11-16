@@ -426,6 +426,8 @@
                 this.maxDistance = 15;
                 this.minPolarAngle = 0;
                 this.maxPolarAngle = Math.PI / 2;
+                this.minAzimuthAngle = -Infinity;
+                this.maxAzimuthAngle = Infinity;
 
                 this.enableDamping = true;
                 this.dampingFactor = 0.05;
@@ -507,6 +509,7 @@
                         }
 
                         spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, spherical.phi));
+                        spherical.theta = Math.max(scope.minAzimuthAngle, Math.min(scope.maxAzimuthAngle, spherical.theta));
                         spherical.makeSafe();
                         spherical.radius *= scale;
                         spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, spherical.radius));
@@ -539,7 +542,10 @@
             controls.dampingFactor = 0.05;
             controls.minDistance = 2;
             controls.maxDistance = 8;
-            controls.maxPolarAngle = Math.PI / 2;
+            controls.maxPolarAngle = Math.PI / 2;  // Can't go below floor
+            // Restrict azimuthal angle to prevent going behind monitors
+            controls.minAzimuthAngle = -Math.PI / 3;  // -60 degrees
+            controls.maxAzimuthAngle = Math.PI / 3;   // +60 degrees
             controls.update();
         }
 
@@ -606,6 +612,7 @@
                     createFloor();
                     createMonitorWall();
                     createBackWall();
+                    createDome();
 
                     // Hide loading screen
                     setTimeout(() => {
@@ -674,6 +681,7 @@
             createFloor();
             createMonitorWall();
             createBackWall();
+            createDome();
 
             // Hide loading screen
             setTimeout(() => {
@@ -734,6 +742,21 @@
             scene.add(wall);
         }
 
+        function createDome() {
+            // Create hemisphere/dome to hide floor edges and create enclosed space
+            const domeGeometry = new THREE.SphereGeometry(25, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+            const domeMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0a0a15, // Match background color
+                side: THREE.BackSide,  // Render inside of sphere
+                roughness: 1.0,
+                metalness: 0.0
+            });
+            const dome = new THREE.Mesh(domeGeometry, domeMaterial);
+            dome.position.set(0, 0, 0);
+            dome.rotation.y = Math.PI; // Rotate to align properly
+            scene.add(dome);
+        }
+
         function createMonitorWall() {
             // Create 2x3 grid of large TV-style monitors on wall
             // Grid: 2 rows, 3 columns
@@ -760,6 +783,9 @@
                     const yPos = baseHeight + row * (monitorHeight + gap);
 
                     monitor.position.set(xPos, yPos, wallDistance);
+
+                    // Rotate monitors to face the character (180 degrees)
+                    monitor.rotation.y = Math.PI;
 
                     // Add to userData (don't replace - createLargeTVMonitor already set screen, glow, frame, light)
                     monitor.userData.projectId = project.id;
