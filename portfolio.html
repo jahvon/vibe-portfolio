@@ -537,7 +537,7 @@
                 }();
 
                 this.domElement.addEventListener('mousedown', onMouseDown);
-                this.domElement.addEventListener('wheel', onMouseWheel);
+                this.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -720,6 +720,16 @@
                 // Error callback
                 function(error) {
                     console.error('Error loading character model:', error);
+
+                    // Check if it's a CORS error from file:// protocol
+                    if (window.location.protocol === 'file:') {
+                        console.error('❌ CORS Error: Cannot load GLB files using file:// protocol');
+                        console.info('💡 Solution: Run a local web server instead:');
+                        console.info('   Option 1: python3 -m http.server 8000');
+                        console.info('   Option 2: npx http-server');
+                        console.info('   Then visit: http://localhost:8000/portfolio.html');
+                    }
+
                     console.warn('Creating fallback placeholder character');
                     createFallbackCharacter();
                 }
