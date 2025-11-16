@@ -566,23 +566,24 @@
                     console.log('Calculated desk height:', deskHeight);
                     console.log('Desk surface at:', deskSurfaceY);
 
-                    // Scale character to reasonable size (target ~1.5-2 units tall)
-                    const targetHeight = 1.8;
+                    // Scale character to proper size (needs to be larger than monitors/objects)
+                    const targetHeight = 3.0;  // Increased from 1.8 to make character bigger
                     const scale = targetHeight / characterHeight;
                     character.scale.set(scale, scale, scale);
 
                     // Recalculate after scaling
                     const scaledHeight = targetHeight;
                     const finalDeskHeight = scaledHeight * 0.6;
-                    const finalDeskSurfaceY = finalDeskHeight + 0.1;
+                    const deskThickness = 0.05;  // Thinner desk
+                    const finalDeskSurfaceY = finalDeskHeight + (deskThickness / 2);
 
                     console.log('After scaling - Character height:', scaledHeight);
                     console.log('Final desk height:', finalDeskHeight);
                     console.log('Final desk surface:', finalDeskSurfaceY);
 
-                    // Position character on floor
+                    // Position character on floor, rotate to face forward
                     character.position.set(0, 0, -0.5);
-                    character.rotation.y = 0;
+                    character.rotation.y = Math.PI;  // Rotate 180 degrees to face forward
 
                     // Enable shadows
                     character.traverse(function(node) {
@@ -602,7 +603,7 @@
                     console.log('Character positioned on floor at y=0');
 
                     // Now create everything else based on calculated dimensions
-                    createDesk(finalDeskHeight);
+                    createDesk(finalDeskHeight, deskThickness);
                     createMonitors(finalDeskSurfaceY);
                     createEnvironment(finalDeskSurfaceY);
 
@@ -637,47 +638,49 @@
         }
 
         function createFallbackCharacterAndSetup() {
-            // Fallback: Simple placeholder if GLB fails to load
+            // Fallback: Simple placeholder if GLB fails to load (scaled to 3.0 units tall)
             character = new THREE.Group();
 
-            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.5);
+            const bodyGeometry = new THREE.BoxGeometry(1.2, 1.8, 1.0);  // Scaled up
             const bodyMaterial = new THREE.MeshStandardMaterial({
                 color: 0x2d7f8f,
                 roughness: 0.85,
                 metalness: 0.0
             });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.position.y = 0.45;
+            body.position.y = 0.9;  // Half of body height
             body.castShadow = true;
             character.add(body);
 
-            const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
+            const headGeometry = new THREE.SphereGeometry(0.65, 16, 16);  // Scaled up
             const headMaterial = new THREE.MeshStandardMaterial({
                 color: 0xffcfa0,
                 roughness: 0.9,
                 metalness: 0.0
             });
             const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 1.1;
+            head.position.y = 2.4;  // Body height (1.8) + head radius (0.65) - slight overlap
             head.castShadow = true;
             character.add(head);
 
             character.position.set(0, 0, -0.5);
+            character.rotation.y = Math.PI;  // Face forward
             scene.add(character);
 
             character.userData.head = head;
             character.userData.body = body;
 
-            // Calculate based on fallback character dimensions (~1.4 units tall)
-            const characterHeight = 1.4;
+            // Calculate based on fallback character dimensions (make it bigger - 3.0 units)
+            const characterHeight = 3.0;  // Increased from 1.4
             const deskHeight = characterHeight * 0.6;
-            const deskSurfaceY = deskHeight + 0.1;
+            const deskThickness = 0.05;  // Thinner desk
+            const deskSurfaceY = deskHeight + (deskThickness / 2);
 
             console.log('Fallback character created - height:', characterHeight);
             console.log('Desk height:', deskHeight, 'Surface:', deskSurfaceY);
 
             // Create scene with calculated dimensions
-            createDesk(deskHeight);
+            createDesk(deskHeight, deskThickness);
             createMonitors(deskSurfaceY);
             createEnvironment(deskSurfaceY);
             updateMonitorPositions(deskSurfaceY);
@@ -731,9 +734,9 @@
             scene.add(rimLight);
         }
 
-        function createDesk(deskHeight) {
+        function createDesk(deskHeight, deskThickness) {
             // L-shaped desk at calculated waist height - elevated above blue floor
-            const deskThickness = 0.2;
+            // deskThickness passed as parameter (much thinner now)
 
             const deskMaterial = new THREE.MeshStandardMaterial({
                 color: 0xd4915a, // Warm wood/beige tone
@@ -1029,9 +1032,9 @@
 
             // Fallback character idle animation (for placeholder character only)
             if (character && character.userData.head && character.userData.body) {
-                // Gentle breathing
-                character.userData.body.position.y = 0.45 + Math.sin(elapsedTime * 2) * 0.02;
-                character.userData.head.position.y = 1.1 + Math.sin(elapsedTime * 2) * 0.02;
+                // Gentle breathing (updated for scaled character)
+                character.userData.body.position.y = 0.9 + Math.sin(elapsedTime * 2) * 0.04;
+                character.userData.head.position.y = 2.4 + Math.sin(elapsedTime * 2) * 0.04;
 
                 // Subtle head tilt
                 character.userData.head.rotation.y = Math.sin(elapsedTime * 0.5) * 0.1;
