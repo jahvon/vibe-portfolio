@@ -366,18 +366,18 @@
         function init() {
             // Scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x2a3545); // Deep blue-grey
-            scene.fog = new THREE.Fog(0x2a3545, 10, 50);
+            scene.background = new THREE.Color(0x0a0a15); // Very dark blue/black
+            scene.fog = new THREE.Fog(0x0a0a15, 8, 20);
 
-            // Camera - Over-the-shoulder perspective
+            // Camera - Behind character looking at monitor wall
             camera = new THREE.PerspectiveCamera(
-                60,
+                75,  // Wider FOV for immersive feel
                 window.innerWidth / window.innerHeight,
                 0.1,
                 1000
             );
-            // Position behind and to the right of character, at head level (character head at y≈1.9)
-            camera.position.set(1.5, 2, -2);
+            // Position behind character, over shoulder, looking at monitor wall
+            camera.position.set(0.8, 2.2, -2.5);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -533,12 +533,12 @@
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Target point at character head/monitor level
-            controls.target.set(0, 0.5, -0.3);
+            // Target point at center of monitor wall
+            controls.target.set(0, 1.8, 2);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 3;
-            controls.maxDistance = 10;
+            controls.minDistance = 2;
+            controls.maxDistance = 8;
             controls.maxPolarAngle = Math.PI / 2;
             controls.update();
         }
@@ -581,9 +581,9 @@
                     console.log('Final desk height:', finalDeskHeight);
                     console.log('Final desk surface:', finalDeskSurfaceY);
 
-                    // Position character on floor, rotate to face forward
-                    character.position.set(0, 0, -0.5);
-                    character.rotation.y = Math.PI;  // Rotate 180 degrees to face forward
+                    // Position character in front of monitor wall, facing monitors
+                    character.position.set(0, 0, 0);
+                    character.rotation.y = 0;  // Face forward toward monitors
 
                     // Enable shadows
                     character.traverse(function(node) {
@@ -599,16 +599,13 @@
 
                     scene.add(character);
 
-                    // NO ANIMATIONS - character should be completely still
-                    console.log('Character positioned on floor at y=0');
+                    // NO ANIMATIONS by default - will play once every 60 seconds
+                    console.log('Character positioned on floor at y=0, facing monitor wall');
 
-                    // Now create everything else based on calculated dimensions
-                    createDesk(finalDeskHeight, deskThickness);
-                    createMonitors(finalDeskSurfaceY);
-                    createEnvironment(finalDeskSurfaceY);
-
-                    // Update monitor positions in projects array
-                    updateMonitorPositions(finalDeskSurfaceY);
+                    // Create surveillance room setup
+                    createFloor();
+                    createMonitorWall();
+                    createBackWall();
 
                     // Hide loading screen
                     setTimeout(() => {
@@ -663,27 +660,20 @@
             head.castShadow = true;
             character.add(head);
 
-            character.position.set(0, 0, -0.5);
-            character.rotation.y = Math.PI;  // Face forward
+            character.position.set(0, 0, 0);
+            character.rotation.y = 0;  // Face monitors
             scene.add(character);
 
             character.userData.head = head;
             character.userData.body = body;
 
-            // Calculate based on fallback character dimensions (make it bigger - 3.0 units)
-            const characterHeight = 3.0;  // Increased from 1.4
-            const deskHeight = characterHeight * 0.6;
-            const deskThickness = 0.05;  // Thinner desk
-            const deskSurfaceY = deskHeight + (deskThickness / 2);
+            console.log('Fallback character created - height: 3.0 units');
+            console.log('Position: facing monitor wall');
 
-            console.log('Fallback character created - height:', characterHeight);
-            console.log('Desk height:', deskHeight, 'Surface:', deskSurfaceY);
-
-            // Create scene with calculated dimensions
-            createDesk(deskHeight, deskThickness);
-            createMonitors(deskSurfaceY);
-            createEnvironment(deskSurfaceY);
-            updateMonitorPositions(deskSurfaceY);
+            // Create surveillance room setup
+            createFloor();
+            createMonitorWall();
+            createBackWall();
 
             // Hide loading screen
             setTimeout(() => {
@@ -691,194 +681,141 @@
             }, 500);
         }
 
-        function updateMonitorPositions(deskSurfaceY) {
-            // Update all monitor Y positions in projects array
-            projects.forEach(project => {
-                project.monitorPosition.y = deskSurfaceY;
-            });
-            console.log('Monitor positions updated to y =', deskSurfaceY);
-        }
-
         function setupLighting() {
-            // Ambient light for overall illumination - increased brightness
-            const ambientLight = new THREE.AmbientLight(0x5a5a7a, 1.2);
+            // Very dim ambient light - dark surveillance room
+            const ambientLight = new THREE.AmbientLight(0x1a1a2e, 0.2);
             scene.add(ambientLight);
 
-            // Key light (main light source)
-            const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
-            keyLight.position.set(5, 8, 5);
-            keyLight.castShadow = true;
-            keyLight.shadow.mapSize.width = 2048;
-            keyLight.shadow.mapSize.height = 2048;
-            keyLight.shadow.camera.near = 0.5;
-            keyLight.shadow.camera.far = 50;
-            keyLight.shadow.camera.left = -10;
-            keyLight.shadow.camera.right = 10;
-            keyLight.shadow.camera.top = 10;
-            keyLight.shadow.camera.bottom = -10;
-            scene.add(keyLight);
+            // Subtle blue directional light from monitors (very dim)
+            const monitorLight = new THREE.DirectionalLight(0x00d4ff, 0.3);
+            monitorLight.position.set(0, 2, 4);
+            monitorLight.castShadow = true;
+            monitorLight.shadow.mapSize.width = 1024;
+            monitorLight.shadow.mapSize.height = 1024;
+            scene.add(monitorLight);
 
-            // Fill light (softer, from the side)
-            const fillLight = new THREE.PointLight(0x4080ff, 0.8);
-            fillLight.position.set(-5, 3, 3);
-            scene.add(fillLight);
-
-            // Accent light (warm glow)
-            const accentLight = new THREE.PointLight(0xffaa00, 0.7);
-            accentLight.position.set(0, 2, -3);
-            scene.add(accentLight);
-
-            // Rim light for monitors
-            const rimLight = new THREE.PointLight(0x00d4ff, 1.0);
-            rimLight.position.set(0, 2, 2);
+            // Rim light on character from monitor glow
+            const rimLight = new THREE.PointLight(0x0099cc, 0.5);
+            rimLight.position.set(0, 1.5, 3);
             scene.add(rimLight);
         }
 
-        function createDesk(deskHeight, deskThickness) {
-            // L-shaped desk at calculated waist height - elevated above blue floor
-            // deskThickness passed as parameter (much thinner now)
-
-            const deskMaterial = new THREE.MeshStandardMaterial({
-                color: 0xd4915a, // Warm wood/beige tone
-                roughness: 0.85,
-                metalness: 0.0
-            });
-
-            // Back section (behind character)
-            const backDeskGeometry = new THREE.BoxGeometry(6, deskThickness, 1.2);
-            const backDesk = new THREE.Mesh(backDeskGeometry, deskMaterial);
-            backDesk.position.set(0, deskHeight, -1.3);
-            backDesk.receiveShadow = true;
-            backDesk.castShadow = true;
-            scene.add(backDesk);
-
-            // Left arm (wrapping around left side)
-            const leftDeskGeometry = new THREE.BoxGeometry(1.2, deskThickness, 3.5);
-            const leftDesk = new THREE.Mesh(leftDeskGeometry, deskMaterial);
-            leftDesk.position.set(-2.9, deskHeight, 0.45);
-            leftDesk.receiveShadow = true;
-            leftDesk.castShadow = true;
-            scene.add(leftDesk);
-
-            // Right arm (wrapping around right side)
-            const rightDeskGeometry = new THREE.BoxGeometry(1.2, deskThickness, 3.5);
-            const rightDesk = new THREE.Mesh(rightDeskGeometry, deskMaterial);
-            rightDesk.position.set(2.9, deskHeight, 0.45);
-            rightDesk.receiveShadow = true;
-            rightDesk.castShadow = true;
-            scene.add(rightDesk);
-
-            // Front section (connecting the arms in front of character)
-            const frontDeskGeometry = new THREE.BoxGeometry(3.4, deskThickness, 1.2);
-            const frontDesk = new THREE.Mesh(frontDeskGeometry, deskMaterial);
-            frontDesk.position.set(0, deskHeight, 1.6);
-            frontDesk.receiveShadow = true;
-            frontDesk.castShadow = true;
-            scene.add(frontDesk);
-
-            // Desk legs for L-shaped desk
-            const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, deskHeight);
-            const legMaterial = new THREE.MeshStandardMaterial({
-                color: 0xa87242, // Darker wood
-                roughness: 0.9,
-                metalness: 0.0
-            });
-
-            const legPositions = [
-                // Back corners
-                [-2.8, deskHeight / 2, -1.8],
-                [2.8, deskHeight / 2, -1.8],
-                // Front corners (left side)
-                [-3.4, deskHeight / 2, 2.1],
-                // Front corners (right side)
-                [3.4, deskHeight / 2, 2.1],
-                // Middle support legs
-                [-2.2, deskHeight / 2, 0.5],
-                [2.2, deskHeight / 2, 0.5]
-            ];
-
-            legPositions.forEach(pos => {
-                const leg = new THREE.Mesh(legGeometry, legMaterial);
-                leg.position.set(...pos);
-                leg.castShadow = true;
-                scene.add(leg);
-            });
-
-            // Floor
+        function createFloor() {
+            // Dark floor with subtle grid pattern
             const floorGeometry = new THREE.PlaneGeometry(30, 30);
             const floorMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3d4e5f, // Deep blue-grey
+                color: 0x0d0d1a, // Very dark blue/black
                 roughness: 0.95,
-                metalness: 0.0
+                metalness: 0.1
             });
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
+
+            // Optional: Add subtle grid lines
+            const gridHelper = new THREE.GridHelper(30, 30, 0x1a1a2e, 0x0f0f1a);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
         }
 
-        function createMonitors(deskSurfaceY) {
-            // Monitors rest on calculated desk surface height
-            projects.forEach((project, index) => {
-                const monitor = createMonitor(project);
-                monitor.userData = {
-                    projectId: project.id,
-                    projectIndex: index,
-                    originalY: deskSurfaceY,  // Monitors rest on desk surface
-                    isHovered: false
-                };
-                monitors.push(monitor);
-                scene.add(monitor);
+        function createBackWall() {
+            // Wall behind monitors
+            const wallGeometry = new THREE.PlaneGeometry(15, 8);
+            const wallMaterial = new THREE.MeshStandardMaterial({
+                color: 0x0a0a15, // Very dark to blend with background
+                roughness: 0.9,
+                metalness: 0.0
             });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.position.set(0, 2, 4);  // Behind monitor wall
+            wall.receiveShadow = true;
+            scene.add(wall);
         }
 
-        function createMonitor(project) {
+        function createMonitorWall() {
+            // Create 2x3 grid of large TV-style monitors on wall
+            // Grid: 2 rows, 3 columns
+            const monitorWidth = 2.4;   // Large TV size (16:9 ratio)
+            const monitorHeight = 1.35;
+            const gap = 0.15;  // Small gap between monitors
+            const wallDistance = 3.5;  // Distance from origin
+            const baseHeight = 1.2;  // Bottom row starts here
+
+            const rows = 2;
+            const cols = 3;
+
+            let monitorIndex = 0;
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    if (monitorIndex >= projects.length) break;
+
+                    const project = projects[monitorIndex];
+                    const monitor = createLargeTVMonitor(project, monitorWidth, monitorHeight);
+
+                    // Calculate position in grid
+                    const xPos = (col - 1) * (monitorWidth + gap);  // Center at col=1
+                    const yPos = baseHeight + row * (monitorHeight + gap);
+
+                    monitor.position.set(xPos, yPos, wallDistance);
+
+                    monitor.userData = {
+                        projectId: project.id,
+                        projectIndex: monitorIndex,
+                        originalY: yPos,
+                        originalEmissive: 0.8,  // Strong glow by default
+                        isHovered: false,
+                        isStatic: false,  // For static flicker effect
+                    };
+
+                    monitors.push(monitor);
+                    scene.add(monitor);
+                    monitorIndex++;
+                }
+            }
+
+            console.log(`Created ${monitors.length} monitors in 2x3 wall grid`);
+        }
+
+        function createLargeTVMonitor(project, width, height) {
             const monitor = new THREE.Group();
 
-            // Monitor stand
-            const standGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3, 8);
-            const standMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4a4a5a, // Dark blue-grey
-                roughness: 0.75,
-                metalness: 0.15
-            });
-            const stand = new THREE.Mesh(standGeometry, standMaterial);
-            stand.position.y = 0.15;
-            stand.castShadow = true;
-            monitor.add(stand);
-
-            // Monitor frame
-            const frameGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.05);
+            // Thin bezel/frame
+            const frameThickness = 0.05;
+            const frameGeometry = new THREE.BoxGeometry(
+                width + 0.1,
+                height + 0.1,
+                frameThickness
+            );
             const frameMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2a3a4a, // Deep blue
-                roughness: 0.7,
-                metalness: 0.2
+                color: 0x0a0a0a, // Almost black
+                roughness: 0.6,
+                metalness: 0.3
             });
             const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-            frame.position.y = 0.5;
             frame.castShadow = true;
             monitor.add(frame);
 
-            // Monitor screen (this will show the project thumbnail)
-            const screenGeometry = new THREE.PlaneGeometry(0.7, 0.4);
-
-            // Load texture
+            // Screen with project thumbnail
+            const screenGeometry = new THREE.PlaneGeometry(width, height);
             const textureLoader = new THREE.TextureLoader();
             const texture = textureLoader.load(project.thumbnail);
 
             const screenMaterial = new THREE.MeshStandardMaterial({
                 map: texture,
-                emissive: 0x00d4ff,
-                emissiveIntensity: 0.3,
-                roughness: 0.2,
-                metalness: 0.5
+                emissive: 0x00aaff,  // Cyan/blue glow
+                emissiveIntensity: 0.8,  // Strong glow - main light source
+                roughness: 0.1,
+                metalness: 0.1
             });
             const screen = new THREE.Mesh(screenGeometry, screenMaterial);
-            screen.position.set(0, 0.5, 0.026);
+            screen.position.z = frameThickness / 2 + 0.01;
             monitor.add(screen);
 
-            // Glow effect (hidden by default)
-            const glowGeometry = new THREE.PlaneGeometry(0.75, 0.45);
+            // Glow effect for hover
+            const glowGeometry = new THREE.PlaneGeometry(width + 0.2, height + 0.2);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: 0x00d4ff,
                 transparent: true,
@@ -886,159 +823,83 @@
                 side: THREE.DoubleSide
             });
             const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-            glow.position.set(0, 0.5, 0.027);
+            glow.position.z = frameThickness / 2 + 0.02;
             monitor.add(glow);
 
-            // Position monitor on desk surface using project data
-            monitor.position.set(
-                project.monitorPosition.x,
-                project.monitorPosition.y,  // Monitors rest on desk surface
-                project.monitorPosition.z
-            );
+            // Point light for each monitor (contributes to room lighting)
+            const monitorLight = new THREE.PointLight(0x00aaff, 1.5, 5);
+            monitorLight.position.z = 0.5;
+            monitor.add(monitorLight);
 
-            // Rotate monitor to face character position (0, 0.5, -0.5)
-            const characterPos = new THREE.Vector3(0, 0.5, -0.5);
-            monitor.lookAt(characterPos);
-
-            // Store references for animation
+            // Store references
             monitor.userData.screen = screen;
             monitor.userData.glow = glow;
             monitor.userData.frame = frame;
+            monitor.userData.light = monitorLight;
 
             return monitor;
-        }
-
-        function createEnvironment(deskSurfaceY) {
-            // Use calculated desk surface height for all objects
-
-            // Keyboard directly in front of character
-            const keyboardGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.3);
-            const keyboardMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4a5a6a, // Dark blue-grey
-                roughness: 0.8,
-                metalness: 0.1
-            });
-            const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
-            keyboard.position.set(0, deskSurfaceY + 0.025, 0.2);
-            keyboard.castShadow = true;
-            scene.add(keyboard);
-
-            // Mouse and mousepad to the right
-            const mousepadGeometry = new THREE.BoxGeometry(0.25, 0.01, 0.3);
-            const mousepadMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d4a5a, // Deep teal-blue
-                roughness: 0.95
-            });
-            const mousepad = new THREE.Mesh(mousepadGeometry, mousepadMaterial);
-            mousepad.position.set(0.7, deskSurfaceY + 0.005, 0.2);
-            mousepad.castShadow = true;
-            scene.add(mousepad);
-
-            const mouseGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.12);
-            const mouseMaterial = new THREE.MeshStandardMaterial({
-                color: 0x5a6a7a, // Medium grey-blue
-                roughness: 0.7,
-                metalness: 0.1
-            });
-            const mouse = new THREE.Mesh(mouseGeometry, mouseMaterial);
-            mouse.position.set(0.7, deskSurfaceY + 0.025, 0.2);
-            mouse.castShadow = true;
-            scene.add(mouse);
-
-            // Notebook on left side of desk
-            const notebookGeometry = new THREE.BoxGeometry(0.35, 0.02, 0.45);
-            const notebookMaterial = new THREE.MeshStandardMaterial({
-                color: 0xc67f3a, // Warm orange-brown
-                roughness: 0.95
-            });
-            const notebook = new THREE.Mesh(notebookGeometry, notebookMaterial);
-            notebook.position.set(-2.3, deskSurfaceY + 0.01, 0.5);
-            notebook.rotation.y = -0.3;
-            notebook.castShadow = true;
-            scene.add(notebook);
-
-            // Pen on notebook
-            const penGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.15, 6);
-            const penMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d5f7f, // Deep teal
-                roughness: 0.6,
-                metalness: 0.2
-            });
-            const pen = new THREE.Mesh(penGeometry, penMaterial);
-            pen.position.set(-2.2, deskSurfaceY + 0.03, 0.6);
-            pen.rotation.z = Math.PI / 2;
-            pen.rotation.y = 0.5;
-            pen.castShadow = true;
-            scene.add(pen);
-
-            // Coffee cup on right side of desk
-            const cupGroup = new THREE.Group();
-
-            const cupGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.15, 16);
-            const cupMaterial = new THREE.MeshStandardMaterial({
-                color: 0xe8d4bf, // Warm cream
-                roughness: 0.85,
-                metalness: 0.0
-            });
-            const cup = new THREE.Mesh(cupGeometry, cupMaterial);
-            cup.castShadow = true;
-            cupGroup.add(cup);
-
-            const coffeeGeometry = new THREE.CircleGeometry(0.09, 16);
-            const coffeeMaterial = new THREE.MeshStandardMaterial({
-                color: 0x6f3a1a, // Warm brown
-                roughness: 0.95
-            });
-            const coffee = new THREE.Mesh(coffeeGeometry, coffeeMaterial);
-            coffee.rotation.x = -Math.PI / 2;
-            coffee.position.y = 0.076;
-            cupGroup.add(coffee);
-
-            cupGroup.position.set(2.3, deskSurfaceY + 0.075, 0.5);
-            scene.add(cupGroup);
-
-            // Small plant on back desk
-            const potGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.15, 16);
-            const potMaterial = new THREE.MeshStandardMaterial({
-                color: 0xc85f3a, // Terracotta orange
-                roughness: 0.9
-            });
-            const pot = new THREE.Mesh(potGeometry, potMaterial);
-            pot.position.set(0, deskSurfaceY + 0.075, -1.1);
-            pot.castShadow = true;
-            scene.add(pot);
-
-            const leafGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-            const leafMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4a7f3a, // Warm green
-                roughness: 0.95
-            });
-            const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
-            leaves.scale.set(1, 1.5, 1);
-            leaves.position.set(0, deskSurfaceY + 0.27, -1.1);
-            leaves.castShadow = true;
-            scene.add(leaves);
         }
 
         // ==============================================
         // ANIMATION & INTERACTION
         // ==============================================
+        let lastAnimationTime = 0;
+        const ANIMATION_INTERVAL = 60000;  // 60 seconds
+        let lastStaticTime = 0;
+        let staticMonitor = null;
+        let staticDuration = 0;
+
         function animate() {
             requestAnimationFrame(animate);
 
             const elapsedTime = clock.getElapsedTime();
+            const currentTime = Date.now();
 
-            // NO character animations - character should be completely still
-
-            // Fallback character idle animation (for placeholder character only)
+            // Character animation - plays ONCE every 60 seconds
             if (character && character.userData.head && character.userData.body) {
-                // Gentle breathing (updated for scaled character)
-                character.userData.body.position.y = 0.9 + Math.sin(elapsedTime * 2) * 0.04;
-                character.userData.head.position.y = 2.4 + Math.sin(elapsedTime * 2) * 0.04;
+                if (currentTime - lastAnimationTime > ANIMATION_INTERVAL) {
+                    // Play animation for ~3 seconds
+                    const animationPhase = (currentTime - lastAnimationTime - ANIMATION_INTERVAL) / 1000;
 
-                // Subtle head tilt
-                character.userData.head.rotation.y = Math.sin(elapsedTime * 0.5) * 0.1;
-                character.userData.head.rotation.z = Math.sin(elapsedTime * 0.3) * 0.05;
+                    if (animationPhase < 3) {
+                        // Gentle breathing during animation
+                        character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
+                        character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
+                        // Subtle head tilt
+                        character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
+                        character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
+                    } else {
+                        // Animation finished, reset timer and positions
+                        lastAnimationTime = currentTime;
+                        character.userData.body.position.y = 0.9;
+                        character.userData.head.position.y = 2.4;
+                        character.userData.head.rotation.y = 0;
+                        character.userData.head.rotation.z = 0;
+                    }
+                }
+            }
+
+            // Random static flicker on monitors
+            // Check every frame with low probability
+            if (staticMonitor === null && Math.random() < 0.005) {  // ~0.5% chance per frame
+                // Pick random monitor for static
+                const randomIndex = Math.floor(Math.random() * monitors.length);
+                staticMonitor = monitors[randomIndex];
+                staticMonitor.userData.isStatic = true;
+                staticDuration = 1000 + Math.random() * 1000;  // 1-2 seconds
+                lastStaticTime = currentTime;
+
+                // Show static pattern (for now, just dim the screen significantly)
+                staticMonitor.userData.screen.material.emissiveIntensity = 0.3;
+                staticMonitor.userData.screen.material.emissive.setHex(0xffffff);  // White static
+            }
+
+            // Clear static after duration
+            if (staticMonitor && currentTime - lastStaticTime > staticDuration) {
+                staticMonitor.userData.isStatic = false;
+                staticMonitor.userData.screen.material.emissiveIntensity = staticMonitor.userData.originalEmissive;
+                staticMonitor.userData.screen.material.emissive.setHex(0x00aaff);  // Back to cyan
+                staticMonitor = null;
             }
 
             // Monitor hover animations
@@ -1048,17 +909,16 @@
                     return;
                 }
 
-                const targetY = monitor.userData.isHovered ?
-                    monitor.userData.originalY + 0.1 :
-                    monitor.userData.originalY;
+                // Don't animate if showing static
+                if (monitor.userData.isStatic) {
+                    return;
+                }
 
-                monitor.position.y += (targetY - monitor.position.y) * 0.1;
-
-                const targetGlowOpacity = monitor.userData.isHovered ? 0.4 : 0;
+                const targetGlowOpacity = monitor.userData.isHovered ? 0.3 : 0;
                 monitor.userData.glow.material.opacity +=
                     (targetGlowOpacity - monitor.userData.glow.material.opacity) * 0.1;
 
-                const targetEmissive = monitor.userData.isHovered ? 0.5 : 0.3;
+                const targetEmissive = monitor.userData.isHovered ? 1.0 : monitor.userData.originalEmissive;
                 monitor.userData.screen.material.emissiveIntensity +=
                     (targetEmissive - monitor.userData.screen.material.emissiveIntensity) * 0.1;
             });
