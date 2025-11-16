@@ -359,7 +359,7 @@
         let monitors = [];
         let character;
         let mixer;  // Animation mixer for GLB animations
-        let characterActions = [];  // Animation actions from GLB
+        let idleAction, clappingAction;  // Specific animations
         let raycaster, mouse;
         let hoveredMonitor = null;
         let selectedMonitorIndex = -1;
@@ -620,16 +620,35 @@
                     if (gltf.animations && gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(character);
 
-                        // Create actions for all animations
+                        console.log(`Found ${gltf.animations.length} animations in GLB:`);
+
+                        // Find specific animations by name
                         gltf.animations.forEach((clip, index) => {
-                            const action = mixer.clipAction(clip);
-                            action.loop = THREE.LoopOnce;  // Play once, don't loop
-                            action.clampWhenFinished = true;  // Hold last frame
-                            characterActions.push(action);
-                            console.log(`Animation ${index}: ${clip.name} (${clip.duration.toFixed(2)}s)`);
+                            console.log(`  ${index}: ${clip.name} (${clip.duration.toFixed(2)}s)`);
+
+                            if (clip.name.includes('Standing') || clip.name.includes('Idle')) {
+                                idleAction = mixer.clipAction(clip);
+                                idleAction.loop = THREE.LoopRepeat;  // Loop continuously
+                                console.log('    -> Set as IDLE animation (looping)');
+                            } else if (clip.name.includes('Clapping') || clip.name.includes('Clap')) {
+                                clappingAction = mixer.clipAction(clip);
+                                clappingAction.loop = THREE.LoopOnce;  // Play once
+                                clappingAction.clampWhenFinished = true;  // Hold last frame
+                                console.log('    -> Set as CLAPPING animation (once)');
+                            }
                         });
 
-                        console.log(`Loaded ${characterActions.length} animations from GLB`);
+                        // Start the idle animation immediately
+                        if (idleAction) {
+                            idleAction.play();
+                            console.log('Started idle/standing animation');
+                        } else {
+                            console.warn('No idle/standing animation found!');
+                        }
+
+                        if (!clappingAction) {
+                            console.warn('No clapping animation found!');
+                        }
                     } else {
                         console.warn('No animations found in GLB model');
                     }
@@ -638,7 +657,7 @@
                     character.userData.head = headMesh || character;
                     character.userData.body = bodyMesh || character;
                     character.userData.isGLBModel = true;
-                    character.userData.hasAnimations = (characterActions.length > 0);
+                    character.userData.hasAnimations = (idleAction || clappingAction);
 
                     console.log('GLB character loaded:');
                     console.log('  Head mesh found:', headMesh ? headMesh.name : 'Using entire character');
@@ -924,30 +943,35 @@
         }
 
         function playCharacterAnimation() {
-            // Play GLB animation if available, otherwise use fallback animation
-            if (characterActions && characterActions.length > 0) {
-                // Stop all currently playing actions first
-                characterActions.forEach(a => a.stop());
+            if (clappingAction && idleAction) {
+                // Crossfade from idle to clapping
+                idleAction.fadeOut(0.3);  // Fade out idle over 0.3 seconds
+                clappingAction.reset();   // Reset clapping to start
+                clappingAction.fadeIn(0.3);  // Fade in clapping over 0.3 seconds
+                clappingAction.play();    // Start playing
 
-                // Play first animation (clap)
-                const action = characterActions[0];
-                action.reset();           // Reset to beginning
-                action.setEffectiveWeight(1);  // Ensure full weight
-                action.setEffectiveTimeScale(1);  // Normal speed
-                action.paused = false;    // Make sure not paused
-                action.enabled = true;    // Enable the action
-                action.play();            // Start playing
+                console.log('Switching to CLAPPING animation');
+                console.log('  Duration:', clappingAction.getClip().duration.toFixed(2), 'seconds');
 
-                console.log('Playing GLB animation:', action.getClip().name);
-                console.log('  Duration:', action.getClip().duration, 'seconds');
-                console.log('  Action enabled:', action.enabled);
-                console.log('  Action paused:', action.paused);
-                console.log('  Action time:', action.time);
-            } else if (character && character.userData.head && character.userData.body) {
-                // Fallback: animate individual parts for non-GLB character
-                console.log('No GLB animations available, using fallback animation');
-                // This would need a tween library or manual animation tracking
-                // For now, just log that we tried
+                // After clapping finishes, fade back to idle
+                const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
+                setTimeout(() => {
+                    if (clappingAction && idleAction) {
+                        console.log('Switching back to IDLE animation');
+                        clappingAction.fadeOut(0.5);
+                        idleAction.reset();
+                        idleAction.fadeIn(0.5);
+                        idleAction.play();
+                    }
+                }, clappingDuration);
+
+            } else if (clappingAction) {
+                // Only have clapping, no idle
+                clappingAction.reset();
+                clappingAction.play();
+                console.log('Playing CLAPPING animation (no idle)');
+            } else {
+                console.warn('No clapping animation available!');
             }
         }
 
@@ -961,14 +985,6 @@
             // Update animation mixer for GLB animations
             if (mixer) {
                 mixer.update(delta);
-
-                // Debug: Log active actions occasionally
-                if (Math.random() < 0.01) {  // ~1% of frames
-                    const activeActions = characterActions.filter(a => a.isRunning());
-                    if (activeActions.length > 0) {
-                        console.log('Active animations:', activeActions.length, 'Time:', activeActions[0].time.toFixed(2));
-                    }
-                }
             }
 
             // Character animation trigger - plays ONCE every 60 seconds OR when clicked
