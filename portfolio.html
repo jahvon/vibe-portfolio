@@ -377,7 +377,7 @@
                 1000
             );
             // Position behind character, over shoulder, looking at monitor wall
-            camera.position.set(0.8, 2.2, -2.5);
+            camera.position.set(0.5, 2.5, -1.5);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -536,16 +536,16 @@
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Target point at center of monitor wall
-            controls.target.set(0, 1.8, 2);
+            // Target point at center of monitor wall (z=3.5 where monitors are)
+            controls.target.set(0, 1.8, 3.5);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
-            controls.maxDistance = 8;
-            controls.maxPolarAngle = Math.PI / 2;  // Can't go below floor
+            controls.minDistance = 3;
+            controls.maxDistance = 10;
+            controls.maxPolarAngle = Math.PI / 2.2;  // Can't go below floor
             // Restrict azimuthal angle to prevent going behind monitors
-            controls.minAzimuthAngle = -Math.PI / 3;  // -60 degrees
-            controls.maxAzimuthAngle = Math.PI / 3;   // +60 degrees
+            controls.minAzimuthAngle = -Math.PI / 4;  // -45 degrees
+            controls.maxAzimuthAngle = Math.PI / 4;   // +45 degrees
             controls.update();
         }
 
@@ -873,6 +873,15 @@
         let lastStaticTime = 0;
         let staticMonitor = null;
         let staticDuration = 0;
+        let manualAnimationTriggered = false;
+        let manualAnimationStartTime = 0;
+
+        function triggerCharacterAnimation() {
+            // Manually trigger character animation
+            manualAnimationTriggered = true;
+            manualAnimationStartTime = Date.now();
+            console.log('Character animation triggered by click');
+        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -880,27 +889,45 @@
             const elapsedTime = clock.getElapsedTime();
             const currentTime = Date.now();
 
-            // Character animation - plays ONCE every 60 seconds
+            // Character animation - plays ONCE every 60 seconds OR when clicked
             if (character && character.userData.head && character.userData.body) {
-                if (currentTime - lastAnimationTime > ANIMATION_INTERVAL) {
-                    // Play animation for ~3 seconds
-                    const animationPhase = (currentTime - lastAnimationTime - ANIMATION_INTERVAL) / 1000;
+                let shouldAnimate = false;
+                let animationPhase = 0;
 
+                // Check for manual trigger (from click)
+                if (manualAnimationTriggered) {
+                    animationPhase = (currentTime - manualAnimationStartTime) / 1000;
                     if (animationPhase < 3) {
-                        // Gentle breathing during animation
-                        character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
-                        character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
-                        // Subtle head tilt
-                        character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
-                        character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
+                        shouldAnimate = true;
                     } else {
-                        // Animation finished, reset timer and positions
-                        lastAnimationTime = currentTime;
-                        character.userData.body.position.y = 0.9;
-                        character.userData.head.position.y = 2.4;
-                        character.userData.head.rotation.y = 0;
-                        character.userData.head.rotation.z = 0;
+                        manualAnimationTriggered = false;
+                        shouldAnimate = false;
                     }
+                }
+                // Check for automatic 60-second trigger
+                else if (currentTime - lastAnimationTime > ANIMATION_INTERVAL) {
+                    animationPhase = (currentTime - lastAnimationTime - ANIMATION_INTERVAL) / 1000;
+                    if (animationPhase < 3) {
+                        shouldAnimate = true;
+                    } else {
+                        lastAnimationTime = currentTime;
+                        shouldAnimate = false;
+                    }
+                }
+
+                if (shouldAnimate) {
+                    // Gentle breathing during animation
+                    character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
+                    character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
+                    // Subtle head tilt
+                    character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
+                    character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
+                } else {
+                    // Reset to default position
+                    character.userData.body.position.y = 0.9;
+                    character.userData.head.position.y = 2.4;
+                    character.userData.head.rotation.y = 0;
+                    character.userData.head.rotation.z = 0;
                 }
             }
 
@@ -968,6 +995,20 @@
             // Update raycaster
             raycaster.setFromCamera(mouse, camera);
 
+            // Check for character hover first
+            if (character) {
+                const characterIntersects = raycaster.intersectObject(character, true);
+                if (characterIntersects.length > 0) {
+                    document.body.style.cursor = 'pointer';
+                    // Reset monitor hover states
+                    monitors.forEach(monitor => {
+                        monitor.userData.isHovered = false;
+                    });
+                    hoveredMonitor = null;
+                    return;
+                }
+            }
+
             // Check for intersections with monitors
             const intersects = raycaster.intersectObjects(monitors, true);
 
@@ -1000,6 +1041,19 @@
             // Don't trigger if clicking on modal
             if (event.target.closest('#modal-overlay')) return;
 
+            // Check if character was clicked
+            raycaster.setFromCamera(mouse, camera);
+
+            if (character) {
+                const characterIntersects = raycaster.intersectObject(character, true);
+                if (characterIntersects.length > 0) {
+                    // Character was clicked - trigger animation
+                    triggerCharacterAnimation();
+                    return;
+                }
+            }
+
+            // Check if monitor was clicked
             if (hoveredMonitor) {
                 const projectIndex = hoveredMonitor.userData.projectIndex;
                 openModal(projectIndex);
