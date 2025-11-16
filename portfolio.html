@@ -863,6 +863,11 @@
 
             // Monitor hover animations
             monitors.forEach(monitor => {
+                // Skip if monitor or required properties don't exist
+                if (!monitor || !monitor.userData || !monitor.userData.glow || !monitor.userData.screen) {
+                    return;
+                }
+
                 const targetY = monitor.userData.isHovered ?
                     monitor.userData.originalY + 0.1 :
                     monitor.userData.originalY;
