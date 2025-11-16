@@ -374,8 +374,8 @@
                 0.1,
                 1000
             );
-            // Position behind and to the right of character, at head level
-            camera.position.set(1.5, 2.5, -2);
+            // Position behind and to the right of character, at head level (character head at y≈1.9)
+            camera.position.set(1.5, 2, -2);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -539,8 +539,8 @@
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Target point in front of character where monitors are
-            controls.target.set(0, 1.5, 0.5);
+            // Target point at monitor screen height (desk surface + screen height)
+            controls.target.set(0, 0.55, 0.5);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.minDistance = 3;
@@ -585,7 +585,7 @@
         }
 
         function createDesk() {
-            // Desk surface
+            // Desk surface - positioned at y=0 (top surface at y=0.05)
             const deskGeometry = new THREE.BoxGeometry(8, 0.1, 4);
             const deskMaterial = new THREE.MeshStandardMaterial({
                 color: 0x4a3728,
@@ -593,7 +593,7 @@
                 metalness: 0.1
             });
             const desk = new THREE.Mesh(deskGeometry, deskMaterial);
-            desk.position.y = 0.5;
+            desk.position.y = 0;
             desk.receiveShadow = true;
             desk.castShadow = true;
             scene.add(desk);
@@ -607,10 +607,10 @@
             });
 
             const legPositions = [
-                [-3.5, 0.25, -1.5],
-                [3.5, 0.25, -1.5],
-                [-3.5, 0.25, 1.5],
-                [3.5, 0.25, 1.5]
+                [-3.5, -0.25, -1.5],
+                [3.5, -0.25, -1.5],
+                [-3.5, -0.25, 1.5],
+                [3.5, -0.25, 1.5]
             ];
 
             legPositions.forEach(pos => {
@@ -696,8 +696,8 @@
             rightArm.castShadow = true;
             character.add(rightArm);
 
-            // Position character at desk
-            character.position.set(0, 0.55, -0.5);
+            // Position character at desk (seated on desk surface)
+            character.position.set(0, 0.05, -0.5);
             scene.add(character);
 
             // Store reference to head for animation
@@ -706,12 +706,13 @@
         }
 
         function createMonitors() {
+            const deskHeight = 0.05;
             projects.forEach((project, index) => {
                 const monitor = createMonitor(project);
                 monitor.userData = {
                     projectId: project.id,
                     projectIndex: index,
-                    originalY: project.monitorPosition.y,
+                    originalY: deskHeight,  // Monitors rest on desk surface
                     isHovered: false
                 };
                 monitors.push(monitor);
@@ -776,10 +777,11 @@
             glow.position.set(0, 0.5, 0.027);
             monitor.add(glow);
 
-            // Position monitor
+            // Position monitor on desk surface (stand base touches desk at y=0.05)
+            const deskHeight = 0.05;
             monitor.position.set(
                 project.monitorPosition.x,
-                project.monitorPosition.y,
+                deskHeight,  // All monitors rest on desk surface
                 project.monitorPosition.z
             );
 
@@ -795,7 +797,7 @@
         }
 
         function createEnvironment() {
-            const deskHeight = 0.55; // Top surface of the desk
+            const deskHeight = 0.05; // Top surface of the desk (desk at y=0 with height 0.1)
 
             // Keyboard in front of character
             const keyboardGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.3);
