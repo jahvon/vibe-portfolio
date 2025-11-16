@@ -761,14 +761,13 @@
 
                     monitor.position.set(xPos, yPos, wallDistance);
 
-                    monitor.userData = {
-                        projectId: project.id,
-                        projectIndex: monitorIndex,
-                        originalY: yPos,
-                        originalEmissive: 0.8,  // Strong glow by default
-                        isHovered: false,
-                        isStatic: false,  // For static flicker effect
-                    };
+                    // Add to userData (don't replace - createLargeTVMonitor already set screen, glow, frame, light)
+                    monitor.userData.projectId = project.id;
+                    monitor.userData.projectIndex = monitorIndex;
+                    monitor.userData.originalY = yPos;
+                    monitor.userData.originalEmissive = 0.8;
+                    monitor.userData.isHovered = false;
+                    monitor.userData.isStatic = false;
 
                     monitors.push(monitor);
                     scene.add(monitor);
