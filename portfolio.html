@@ -620,34 +620,40 @@
                     if (gltf.animations && gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(character);
 
-                        console.log(`Found ${gltf.animations.length} animations in GLB:`);
-
-                        // Find specific animations by name
+                        console.log('=== ALL ANIMATIONS IN GLB ===');
                         gltf.animations.forEach((clip, index) => {
-                            console.log(`  ${index}: ${clip.name} (${clip.duration.toFixed(2)}s)`);
-
-                            if (clip.name.includes('Standing') || clip.name.includes('Idle')) {
-                                idleAction = mixer.clipAction(clip);
-                                idleAction.loop = THREE.LoopRepeat;  // Loop continuously
-                                console.log('    -> Set as IDLE animation (looping)');
-                            } else if (clip.name.includes('Clapping') || clip.name.includes('Clap')) {
-                                clappingAction = mixer.clipAction(clip);
-                                clappingAction.loop = THREE.LoopOnce;  // Play once
-                                clappingAction.clampWhenFinished = true;  // Hold last frame
-                                console.log('    -> Set as CLAPPING animation (once)');
-                            }
+                            console.log(`  [${index}] "${clip.name}" - ${clip.duration.toFixed(2)}s`);
                         });
+                        console.log('=============================');
+
+                        // Select animations by index (more reliable than name matching)
+                        // CHANGE THESE INDICES if the animations are in different order:
+                        const IDLE_ANIMATION_INDEX = 0;     // Change this to the index of standing/idle animation
+                        const CLAPPING_ANIMATION_INDEX = 1; // Change this to the index of clapping animation
+
+                        if (gltf.animations[IDLE_ANIMATION_INDEX]) {
+                            idleAction = mixer.clipAction(gltf.animations[IDLE_ANIMATION_INDEX]);
+                            idleAction.loop = THREE.LoopRepeat;
+                            console.log(`Using animation [${IDLE_ANIMATION_INDEX}] "${gltf.animations[IDLE_ANIMATION_INDEX].name}" as IDLE (looping)`);
+                        }
+
+                        if (gltf.animations[CLAPPING_ANIMATION_INDEX]) {
+                            clappingAction = mixer.clipAction(gltf.animations[CLAPPING_ANIMATION_INDEX]);
+                            clappingAction.loop = THREE.LoopOnce;
+                            clappingAction.clampWhenFinished = true;
+                            console.log(`Using animation [${CLAPPING_ANIMATION_INDEX}] "${gltf.animations[CLAPPING_ANIMATION_INDEX].name}" as CLAPPING (once)`);
+                        }
 
                         // Start the idle animation immediately
                         if (idleAction) {
                             idleAction.play();
-                            console.log('Started idle/standing animation');
+                            console.log('✓ Started idle animation');
                         } else {
-                            console.warn('No idle/standing animation found!');
+                            console.warn('⚠ No idle animation found!');
                         }
 
                         if (!clappingAction) {
-                            console.warn('No clapping animation found!');
+                            console.warn('⚠ No clapping animation found!');
                         }
                     } else {
                         console.warn('No animations found in GLB model');
