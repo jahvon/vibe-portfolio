@@ -627,9 +627,9 @@
                         console.log('=============================');
 
                         // Select animations by index (more reliable than name matching)
-                        // Based on GLB: [0]=Clapping, [2]=Idle
+                        // Testing different indices - [1] might be the actual clapping
                         const IDLE_ANIMATION_INDEX = 2;     // Man_Idle (4.17s)
-                        const CLAPPING_ANIMATION_INDEX = 0; // Man_Clapping (1.67s)
+                        const CLAPPING_ANIMATION_INDEX = 1; // Trying index 1 for clapping
 
                         if (gltf.animations[IDLE_ANIMATION_INDEX]) {
                             idleAction = mixer.clipAction(gltf.animations[IDLE_ANIMATION_INDEX]);
@@ -639,9 +639,9 @@
 
                         if (gltf.animations[CLAPPING_ANIMATION_INDEX]) {
                             clappingAction = mixer.clipAction(gltf.animations[CLAPPING_ANIMATION_INDEX]);
-                            clappingAction.loop = THREE.LoopOnce;
-                            clappingAction.clampWhenFinished = true;
-                            console.log(`Using animation [${CLAPPING_ANIMATION_INDEX}] "${gltf.animations[CLAPPING_ANIMATION_INDEX].name}" as CLAPPING (once)`);
+                            clappingAction.loop = THREE.LoopRepeat;  // Loop for debugging
+                            clappingAction.clampWhenFinished = false;
+                            console.log(`Using animation [${CLAPPING_ANIMATION_INDEX}] "${gltf.animations[CLAPPING_ANIMATION_INDEX].name}" as CLAPPING (looping for debug)`);
                         }
 
                         // Start the idle animation immediately
@@ -988,7 +988,7 @@
 
                 // After clapping finishes + hold time, fade back to idle
                 const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
-                const holdTime = 800;  // Hold completed clap for 0.8s before fading back
+                const holdTime = 10000;  // Hold completed animation for 10s to debug
                 setTimeout(() => {
                     if (clappingAction && idleAction) {
                         console.log('Switching back to IDLE animation');
