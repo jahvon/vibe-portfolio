@@ -358,6 +358,8 @@
         let scene, camera, renderer, controls;
         let monitors = [];
         let character;
+        let mixer;  // Animation mixer for GLB animations
+        let characterActions = [];  // Animation actions from GLB
         let raycaster, mouse;
         let hoveredMonitor = null;
         let selectedMonitorIndex = -1;
@@ -614,10 +616,29 @@
                         }
                     });
 
-                    // Store references for animation (fallback to character itself if not found)
+                    // Set up animation mixer for GLB animations
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(character);
+
+                        // Create actions for all animations
+                        gltf.animations.forEach((clip, index) => {
+                            const action = mixer.clipAction(clip);
+                            action.loop = THREE.LoopOnce;  // Play once, don't loop
+                            action.clampWhenFinished = true;  // Hold last frame
+                            characterActions.push(action);
+                            console.log(`Animation ${index}: ${clip.name} (${clip.duration.toFixed(2)}s)`);
+                        });
+
+                        console.log(`Loaded ${characterActions.length} animations from GLB`);
+                    } else {
+                        console.warn('No animations found in GLB model');
+                    }
+
+                    // Store references for fallback if no animations
                     character.userData.head = headMesh || character;
                     character.userData.body = bodyMesh || character;
-                    character.userData.isGLBModel = true;  // Flag to know it's not the fallback
+                    character.userData.isGLBModel = true;
+                    character.userData.hasAnimations = (characterActions.length > 0);
 
                     console.log('GLB character loaded:');
                     console.log('  Head mesh found:', headMesh ? headMesh.name : 'Using entire character');
@@ -902,66 +923,45 @@
             console.log('Character animation triggered by click');
         }
 
+        function playCharacterAnimation() {
+            // Play GLB animation if available, otherwise use fallback animation
+            if (characterActions && characterActions.length > 0) {
+                // Play first animation (clap)
+                const action = characterActions[0];
+                action.reset();  // Reset to start
+                action.play();   // Play the animation
+                console.log('Playing GLB animation:', action.getClip().name);
+            } else if (character && character.userData.head && character.userData.body) {
+                // Fallback: animate individual parts for non-GLB character
+                console.log('No GLB animations available, using fallback animation');
+                // This would need a tween library or manual animation tracking
+                // For now, just log that we tried
+            }
+        }
+
         function animate() {
             requestAnimationFrame(animate);
 
             const elapsedTime = clock.getElapsedTime();
             const currentTime = Date.now();
+            const delta = clock.getDelta();
 
-            // Character animation - plays ONCE every 60 seconds OR when clicked
-            if (character && character.userData.head && character.userData.body) {
-                let shouldAnimate = false;
-                let animationPhase = 0;
+            // Update animation mixer for GLB animations
+            if (mixer) {
+                mixer.update(delta);
+            }
 
+            // Character animation trigger - plays ONCE every 60 seconds OR when clicked
+            if (character) {
                 // Check for manual trigger (from click)
                 if (manualAnimationTriggered) {
-                    animationPhase = (currentTime - manualAnimationStartTime) / 1000;
-                    if (animationPhase < 3) {
-                        shouldAnimate = true;
-                    } else {
-                        console.log('Manual animation completed');
-                        manualAnimationTriggered = false;
-                        shouldAnimate = false;
-                    }
+                    manualAnimationTriggered = false;  // Reset immediately
+                    playCharacterAnimation();
                 }
                 // Check for automatic 60-second trigger
                 else if (currentTime - lastAnimationTime > ANIMATION_INTERVAL) {
-                    animationPhase = (currentTime - lastAnimationTime - ANIMATION_INTERVAL) / 1000;
-                    if (animationPhase < 3) {
-                        shouldAnimate = true;
-                    } else {
-                        lastAnimationTime = currentTime;
-                        shouldAnimate = false;
-                    }
-                }
-
-                if (shouldAnimate) {
-                    // Check if we're animating individual parts or the whole character
-                    if (character.userData.isGLBModel && character.userData.head === character) {
-                        // Animate entire GLB character (couldn't find specific head/body)
-                        character.rotation.y = Math.PI + Math.sin(animationPhase * 2) * 0.08;  // Subtle sway
-                        character.position.y = Math.sin(animationPhase * 4) * 0.03;  // Gentle bounce
-                    } else {
-                        // Animate individual parts (fallback character or found meshes)
-                        character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
-                        character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
-                        // Subtle head tilt
-                        character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
-                        character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
-                    }
-                } else {
-                    // Reset to default position
-                    if (character.userData.isGLBModel && character.userData.head === character) {
-                        // Reset whole character
-                        character.rotation.y = Math.PI;  // Face wall
-                        character.position.y = 0;
-                    } else {
-                        // Reset individual parts
-                        character.userData.body.position.y = 0.9;
-                        character.userData.head.position.y = 2.4;
-                        character.userData.head.rotation.y = 0;
-                        character.userData.head.rotation.z = 0;
-                    }
+                    lastAnimationTime = currentTime;
+                    playCharacterAnimation();
                 }
             }
 
