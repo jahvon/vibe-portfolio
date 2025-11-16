@@ -364,8 +364,8 @@
         function init() {
             // Scene
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a2e);
-            scene.fog = new THREE.Fog(0x1a1a2e, 10, 50);
+            scene.background = new THREE.Color(0x2a3545); // Deep blue-grey
+            scene.fog = new THREE.Fog(0x2a3545, 10, 50);
 
             // Camera - Over-the-shoulder perspective
             camera = new THREE.PerspectiveCamera(
@@ -588,9 +588,9 @@
             // Desk surface - positioned at y=0 (top surface at y=0.05)
             const deskGeometry = new THREE.BoxGeometry(8, 0.1, 4);
             const deskMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4a3728,
-                roughness: 0.7,
-                metalness: 0.1
+                color: 0xd4915a, // Warm wood tone
+                roughness: 0.85,
+                metalness: 0.0
             });
             const desk = new THREE.Mesh(deskGeometry, deskMaterial);
             desk.position.y = 0;
@@ -601,9 +601,9 @@
             // Desk legs
             const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5);
             const legMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2a1a18,
-                roughness: 0.8,
-                metalness: 0.2
+                color: 0xa87242, // Darker wood
+                roughness: 0.9,
+                metalness: 0.0
             });
 
             const legPositions = [
@@ -623,9 +623,9 @@
             // Floor
             const floorGeometry = new THREE.PlaneGeometry(30, 30);
             const floorMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a1625,
-                roughness: 0.9,
-                metalness: 0.1
+                color: 0x3d4e5f, // Deep blue-grey
+                roughness: 0.95,
+                metalness: 0.0
             });
             const floor = new THREE.Mesh(floorGeometry, floorMaterial);
             floor.rotation.x = -Math.PI / 2;
@@ -634,73 +634,117 @@
         }
 
         function createCharacter() {
-            // Simple geometric character - a stylized figure made of basic shapes
+            // Geometric character - Firewatch/Monument Valley aesthetic
             character = new THREE.Group();
 
-            // Body (rounded box)
-            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+            // Body (teal hoodie) - leaning forward posture
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.5);
             const bodyMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3a5a7a,
-                roughness: 0.6,
-                metalness: 0.2
+                color: 0x2d7f8f, // Warm teal
+                roughness: 0.85,
+                metalness: 0.0
             });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.position.y = 1.2;
+            body.position.y = 1.1;
+            body.rotation.x = 0.1; // Lean forward slightly
             body.castShadow = true;
             character.add(body);
 
-            // Head (sphere)
-            const headGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+            // Head (larger, proportional 1:4) - rounded geometric
+            const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
             const headMaterial = new THREE.MeshStandardMaterial({
-                color: 0xffdbac,
-                roughness: 0.7,
-                metalness: 0.1
+                color: 0xffcfa0, // Warm peach
+                roughness: 0.9,
+                metalness: 0.0
             });
             const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 1.85;
+            head.position.y = 1.75;
+            head.position.z = 0.05;
             head.castShadow = true;
             character.add(head);
 
-            // Eyes (simple dots)
-            const eyeGeometry = new THREE.SphereGeometry(0.04, 16, 16);
+            // Eyes (simple geometric dots)
+            const eyeGeometry = new THREE.SphereGeometry(0.05, 12, 12);
             const eyeMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2a2a2a,
-                roughness: 0.4
+                color: 0x1a1a1a,
+                roughness: 0.3,
+                metalness: 0.0
             });
 
             const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            leftEye.position.set(-0.08, 1.9, 0.22);
+            leftEye.position.set(-0.1, 1.8, 0.28);
             character.add(leftEye);
 
             const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            rightEye.position.set(0.08, 1.9, 0.22);
+            rightEye.position.set(0.1, 1.8, 0.28);
             character.add(rightEye);
 
-            // Arms
-            const armGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.6);
+            // Arms - reaching toward keyboard
             const armMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3a5a7a,
-                roughness: 0.6,
-                metalness: 0.2
+                color: 0x2d7f8f, // Match hoodie
+                roughness: 0.85,
+                metalness: 0.0
             });
 
-            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-            leftArm.position.set(-0.4, 1.1, 0);
-            leftArm.rotation.z = 0.3;
-            leftArm.castShadow = true;
-            character.add(leftArm);
+            // Upper left arm
+            const upperArmGeometry = new THREE.CylinderGeometry(0.09, 0.09, 0.4, 8);
+            const leftUpperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
+            leftUpperArm.position.set(-0.38, 1.15, 0.1);
+            leftUpperArm.rotation.z = 0.4;
+            leftUpperArm.rotation.x = 0.3;
+            leftUpperArm.castShadow = true;
+            character.add(leftUpperArm);
 
-            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-            rightArm.position.set(0.4, 1.1, 0);
-            rightArm.rotation.z = -0.3;
-            rightArm.castShadow = true;
-            character.add(rightArm);
+            // Lower left arm (forearm)
+            const lowerArmGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.35, 8);
+            const leftLowerArm = new THREE.Mesh(lowerArmGeometry, armMaterial);
+            leftLowerArm.position.set(-0.5, 0.8, 0.35);
+            leftLowerArm.rotation.z = 0.2;
+            leftLowerArm.rotation.x = 1.2;
+            leftLowerArm.castShadow = true;
+            character.add(leftLowerArm);
+
+            // Left hand (simple geometric mitt)
+            const handGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.15);
+            const handMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffcfa0, // Match skin tone
+                roughness: 0.9,
+                metalness: 0.0
+            });
+            const leftHand = new THREE.Mesh(handGeometry, handMaterial);
+            leftHand.position.set(-0.45, 0.6, 0.55);
+            leftHand.rotation.x = 0.3;
+            leftHand.castShadow = true;
+            character.add(leftHand);
+
+            // Upper right arm
+            const rightUpperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
+            rightUpperArm.position.set(0.38, 1.15, 0.1);
+            rightUpperArm.rotation.z = -0.4;
+            rightUpperArm.rotation.x = 0.3;
+            rightUpperArm.castShadow = true;
+            character.add(rightUpperArm);
+
+            // Lower right arm
+            const rightLowerArm = new THREE.Mesh(lowerArmGeometry, armMaterial);
+            rightLowerArm.position.set(0.5, 0.8, 0.35);
+            rightLowerArm.rotation.z = -0.2;
+            rightLowerArm.rotation.x = 1.2;
+            rightLowerArm.castShadow = true;
+            character.add(rightLowerArm);
+
+            // Right hand
+            const rightHand = new THREE.Mesh(handGeometry, handMaterial);
+            rightHand.position.set(0.45, 0.6, 0.55);
+            rightHand.rotation.x = 0.3;
+            rightHand.castShadow = true;
+            character.add(rightHand);
 
             // Position character at desk (seated on desk surface)
             character.position.set(0, 0.05, -0.5);
             scene.add(character);
 
-            // Store reference to head for animation
+            // Store references for animation
             character.userData.head = head;
             character.userData.body = body;
         }
@@ -724,11 +768,11 @@
             const monitor = new THREE.Group();
 
             // Monitor stand
-            const standGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3);
+            const standGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3, 8);
             const standMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2a2a2a,
-                roughness: 0.5,
-                metalness: 0.7
+                color: 0x4a4a5a, // Dark blue-grey
+                roughness: 0.75,
+                metalness: 0.15
             });
             const stand = new THREE.Mesh(standGeometry, standMaterial);
             stand.position.y = 0.15;
@@ -738,9 +782,9 @@
             // Monitor frame
             const frameGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.05);
             const frameMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a1a1a,
-                roughness: 0.4,
-                metalness: 0.8
+                color: 0x2a3a4a, // Deep blue
+                roughness: 0.7,
+                metalness: 0.2
             });
             const frame = new THREE.Mesh(frameGeometry, frameMaterial);
             frame.position.y = 0.5;
@@ -802,9 +846,9 @@
             // Keyboard in front of character
             const keyboardGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.3);
             const keyboardMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2a2a2a,
-                roughness: 0.6,
-                metalness: 0.3
+                color: 0x4a5a6a, // Dark blue-grey
+                roughness: 0.8,
+                metalness: 0.1
             });
             const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
             keyboard.position.set(0, deskHeight + 0.025, 0.3);
@@ -814,8 +858,8 @@
             // Mouse and mousepad
             const mousepadGeometry = new THREE.BoxGeometry(0.25, 0.01, 0.3);
             const mousepadMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a1a2a,
-                roughness: 0.8
+                color: 0x2d4a5a, // Deep teal-blue
+                roughness: 0.95
             });
             const mousepad = new THREE.Mesh(mousepadGeometry, mousepadMaterial);
             mousepad.position.set(0.8, deskHeight + 0.005, 0.3);
@@ -824,9 +868,9 @@
 
             const mouseGeometry = new THREE.BoxGeometry(0.08, 0.04, 0.12);
             const mouseMaterial = new THREE.MeshStandardMaterial({
-                color: 0x3a3a3a,
-                roughness: 0.5,
-                metalness: 0.4
+                color: 0x5a6a7a, // Medium grey-blue
+                roughness: 0.7,
+                metalness: 0.1
             });
             const mouse = new THREE.Mesh(mouseGeometry, mouseMaterial);
             mouse.position.set(0.8, deskHeight + 0.025, 0.3);
@@ -836,8 +880,8 @@
             // Notebook on desk
             const notebookGeometry = new THREE.BoxGeometry(0.35, 0.02, 0.45);
             const notebookMaterial = new THREE.MeshStandardMaterial({
-                color: 0x8a6f47,
-                roughness: 0.9
+                color: 0xc67f3a, // Warm orange-brown
+                roughness: 0.95
             });
             const notebook = new THREE.Mesh(notebookGeometry, notebookMaterial);
             notebook.position.set(-1.2, deskHeight + 0.01, 0.5);
@@ -846,11 +890,11 @@
             scene.add(notebook);
 
             // Pen on notebook
-            const penGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.15);
+            const penGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.15, 6);
             const penMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a3a5a,
-                roughness: 0.4,
-                metalness: 0.6
+                color: 0x2d5f7f, // Deep teal
+                roughness: 0.6,
+                metalness: 0.2
             });
             const pen = new THREE.Mesh(penGeometry, penMaterial);
             pen.position.set(-1.1, deskHeight + 0.03, 0.6);
@@ -862,20 +906,20 @@
             // Coffee cup on desk
             const cupGroup = new THREE.Group();
 
-            const cupGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.15, 32);
+            const cupGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.15, 16);
             const cupMaterial = new THREE.MeshStandardMaterial({
-                color: 0xeeeeee,
-                roughness: 0.3,
-                metalness: 0.1
+                color: 0xe8d4bf, // Warm cream
+                roughness: 0.85,
+                metalness: 0.0
             });
             const cup = new THREE.Mesh(cupGeometry, cupMaterial);
             cup.castShadow = true;
             cupGroup.add(cup);
 
-            const coffeeGeometry = new THREE.CircleGeometry(0.09, 32);
+            const coffeeGeometry = new THREE.CircleGeometry(0.09, 16);
             const coffeeMaterial = new THREE.MeshStandardMaterial({
-                color: 0x4a2511,
-                roughness: 0.8
+                color: 0x6f3a1a, // Warm brown
+                roughness: 0.95
             });
             const coffee = new THREE.Mesh(coffeeGeometry, coffeeMaterial);
             coffee.rotation.x = -Math.PI / 2;
@@ -886,10 +930,10 @@
             scene.add(cupGroup);
 
             // Small plant
-            const potGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.15, 32);
+            const potGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.15, 16);
             const potMaterial = new THREE.MeshStandardMaterial({
-                color: 0xcc6633,
-                roughness: 0.7
+                color: 0xc85f3a, // Terracotta orange
+                roughness: 0.9
             });
             const pot = new THREE.Mesh(potGeometry, potMaterial);
             pot.position.set(-2.8, deskHeight + 0.075, 1);
@@ -898,8 +942,8 @@
 
             const leafGeometry = new THREE.SphereGeometry(0.15, 8, 8);
             const leafMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d5016,
-                roughness: 0.8
+                color: 0x4a7f3a, // Warm green
+                roughness: 0.95
             });
             const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
             leaves.scale.set(1, 1.5, 1);
