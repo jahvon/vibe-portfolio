@@ -959,8 +959,9 @@
                 console.log('Switching to CLAPPING animation');
                 console.log('  Duration:', clappingAction.getClip().duration.toFixed(2), 'seconds');
 
-                // After clapping finishes, fade back to idle
+                // After clapping finishes + hold time, fade back to idle
                 const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
+                const holdTime = 800;  // Hold completed clap for 0.8s before fading back
                 setTimeout(() => {
                     if (clappingAction && idleAction) {
                         console.log('Switching back to IDLE animation');
@@ -969,7 +970,7 @@
                         idleAction.fadeIn(0.5);
                         idleAction.play();
                     }
-                }, clappingDuration);
+                }, clappingDuration + holdTime);
 
             } else if (clappingAction) {
                 // Only have clapping, no idle
