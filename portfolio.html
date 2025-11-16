@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive 3D Portfolio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #fff;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        /* Modal Overlay */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-card {
+            background: linear-gradient(135deg, #2d3561 0%, #1f2645 100%);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .modal-close:hover {
+            transform: rotate(90deg);
+            color: #00d4ff;
+        }
+
+        .modal-title {
+            color: #00d4ff;
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .modal-description {
+            color: #e0e0e0;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .modal-technologies {
+            margin-bottom: 25px;
+        }
+
+        .tech-label {
+            color: #00d4ff;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .tech-tag {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin: 5px 5px 5px 0;
+            font-size: 13px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-screenshot {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-button {
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #fff;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .modal-button.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-button.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Instructions */
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .modal-card {
+                padding: 25px;
+            }
+
+            .modal-title {
+                font-size: 24px;
+            }
+
+            #instructions {
+                font-size: 12px;
+                padding: 10px 15px;
+                bottom: 10px;
+            }
+        }
+
+        /* Scrollbar styling for modal */
+        .modal-card::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-card::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .modal-card::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        .modal-card::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div class="loading-text">Loading Portfolio...</div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Instructions -->
+    <div id="instructions">
+        🖱️ Drag to rotate • 🖱️ Click monitors to view projects • ⌨️ Tab + Enter for keyboard navigation
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay">
+        <div class="modal-card">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <h2 class="modal-title" id="modal-title"></h2>
+            <p class="modal-description" id="modal-description"></p>
+            <div class="modal-technologies">
+                <span class="tech-label">Technologies:</span>
+                <div id="modal-tech-tags"></div>
+            </div>
+            <img class="modal-screenshot" id="modal-screenshot" src="" alt="Project screenshot" style="display: none;">
+            <div>
+                <a class="modal-button" id="modal-view-button" href="#" target="_blank">View Project →</a>
+                <button class="modal-button secondary" id="modal-close-button">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // ==============================================
+        // PROJECT DATA - Easy to update!
+        // ==============================================
+        const projects = [
+            {
+                id: 1,
+                title: "Neural Network Visualizer",
+                description: "An interactive 3D visualization of neural network architectures with real-time training animation. Explore how data flows through layers and watch the network learn.",
+                technologies: ["Three.js", "TensorFlow.js", "WebGL"],
+                liveUrl: "https://example.com/neural-viz",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ENeural Net%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: -3, y: 1.2, z: 0.5 }
+            },
+            {
+                id: 2,
+                title: "Particle Physics Sandbox",
+                description: "A WebGL-powered particle physics playground where you can experiment with gravity, collision, and forces in real-time. Includes preset simulations and custom parameter controls.",
+                technologies: ["WebGL", "GLSL", "JavaScript"],
+                liveUrl: "https://example.com/particles",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EParticles%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: -1.5, y: 1.2, z: 1.2 }
+            },
+            {
+                id: 3,
+                title: "Generative Art Gallery",
+                description: "A curated collection of generative art pieces created with algorithms. Each piece is unique and generated in real-time using mathematical functions and random seeds.",
+                technologies: ["Canvas API", "P5.js", "React"],
+                liveUrl: "https://example.com/gen-art",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EGen Art%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: 0, y: 1.2, z: 1.5 }
+            },
+            {
+                id: 4,
+                title: "Sound Wave Sculptor",
+                description: "Create beautiful 3D forms from audio input. Upload music or use your microphone to generate real-time sculptural visualizations based on frequency and amplitude data.",
+                technologies: ["Web Audio API", "Three.js", "Tone.js"],
+                liveUrl: "https://example.com/sound-sculpt",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ESound Wave%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: 1.5, y: 1.2, z: 1.2 }
+            },
+            {
+                id: 5,
+                title: "Shader Playground",
+                description: "An interactive GLSL shader editor with live preview. Experiment with fragment and vertex shaders, explore preset effects, and create mesmerizing visual effects.",
+                technologies: ["GLSL", "WebGL", "CodeMirror"],
+                liveUrl: "https://example.com/shaders",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EShaders%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: 3, y: 1.2, z: 0.5 }
+            },
+            {
+                id: 6,
+                title: "Fractal Explorer",
+                description: "Dive deep into the infinite beauty of fractals. Navigate through Mandelbrot and Julia sets with smooth zooming, color customization, and high-resolution rendering.",
+                technologies: ["WebGL", "GLSL", "TypeScript"],
+                liveUrl: "https://example.com/fractals",
+                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EFractals%3C/text%3E%3C/svg%3E",
+                monitorPosition: { x: 4, y: 1.2, z: -0.5 }
+            }
+        ];
+
+        // ==============================================
+        // SCENE SETUP
+        // ==============================================
+        let scene, camera, renderer, controls;
+        let monitors = [];
+        let character;
+        let raycaster, mouse;
+        let hoveredMonitor = null;
+        let selectedMonitorIndex = -1;
+        let clock;
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            scene.fog = new THREE.Fog(0x1a1a2e, 10, 50);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 3, 8);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls - loaded after Three.js
+            loadOrbitControls();
+
+            // Raycaster for mouse interaction
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Clock for animations
+            clock = new THREE.Clock();
+
+            // Lighting
+            setupLighting();
+
+            // Create environment
+            createDesk();
+            createCharacter();
+            createMonitors();
+            createEnvironment();
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onMouseClick);
+            window.addEventListener('keydown', onKeyDown);
+
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+            }, 1000);
+
+            // Start animation
+            animate();
+        }
+
+        function loadOrbitControls() {
+            // OrbitControls - inline minimal version
+            THREE.OrbitControls = function(camera, domElement) {
+                this.camera = camera;
+                this.domElement = domElement;
+
+                this.enabled = true;
+                this.target = new THREE.Vector3();
+
+                this.minDistance = 5;
+                this.maxDistance = 15;
+                this.minPolarAngle = 0;
+                this.maxPolarAngle = Math.PI / 2;
+
+                this.enableDamping = true;
+                this.dampingFactor = 0.05;
+
+                this.rotateSpeed = 0.5;
+
+                const scope = this;
+                const spherical = new THREE.Spherical();
+                const sphericalDelta = new THREE.Spherical();
+                let scale = 1;
+
+                const rotateStart = new THREE.Vector2();
+                const rotateEnd = new THREE.Vector2();
+                const rotateDelta = new THREE.Vector2();
+
+                let state = -1;
+                const STATE = { NONE: -1, ROTATE: 0 };
+
+                function onMouseDown(event) {
+                    if (!scope.enabled) return;
+                    event.preventDefault();
+                    rotateStart.set(event.clientX, event.clientY);
+                    state = STATE.ROTATE;
+                    scope.domElement.addEventListener('mousemove', onMouseMove);
+                    scope.domElement.addEventListener('mouseup', onMouseUp);
+                }
+
+                function onMouseMove(event) {
+                    if (!scope.enabled) return;
+                    event.preventDefault();
+                    rotateEnd.set(event.clientX, event.clientY);
+                    rotateDelta.subVectors(rotateEnd, rotateStart).multiplyScalar(scope.rotateSpeed);
+                    const element = scope.domElement;
+                    sphericalDelta.theta -= 2 * Math.PI * rotateDelta.x / element.clientHeight;
+                    sphericalDelta.phi -= 2 * Math.PI * rotateDelta.y / element.clientHeight;
+                    rotateStart.copy(rotateEnd);
+                }
+
+                function onMouseUp(event) {
+                    if (!scope.enabled) return;
+                    scope.domElement.removeEventListener('mousemove', onMouseMove);
+                    scope.domElement.removeEventListener('mouseup', onMouseUp);
+                    state = STATE.NONE;
+                }
+
+                function onMouseWheel(event) {
+                    if (!scope.enabled) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (event.deltaY < 0) {
+                        scale /= 0.95;
+                    } else if (event.deltaY > 0) {
+                        scale *= 0.95;
+                    }
+                }
+
+                this.update = function() {
+                    const offset = new THREE.Vector3();
+                    const quat = new THREE.Quaternion().setFromUnitVectors(camera.up, new THREE.Vector3(0, 1, 0));
+                    const quatInverse = quat.clone().invert();
+                    const lastPosition = new THREE.Vector3();
+                    const lastQuaternion = new THREE.Quaternion();
+
+                    return function update() {
+                        const position = scope.camera.position;
+                        offset.copy(position).sub(scope.target);
+                        offset.applyQuaternion(quat);
+                        spherical.setFromVector3(offset);
+
+                        if (scope.enableDamping) {
+                            spherical.theta += sphericalDelta.theta * scope.dampingFactor;
+                            spherical.phi += sphericalDelta.phi * scope.dampingFactor;
+                            sphericalDelta.theta *= (1 - scope.dampingFactor);
+                            sphericalDelta.phi *= (1 - scope.dampingFactor);
+                        } else {
+                            spherical.theta += sphericalDelta.theta;
+                            spherical.phi += sphericalDelta.phi;
+                            sphericalDelta.set(0, 0, 0);
+                        }
+
+                        spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, spherical.phi));
+                        spherical.makeSafe();
+                        spherical.radius *= scale;
+                        spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, spherical.radius));
+
+                        offset.setFromSpherical(spherical);
+                        offset.applyQuaternion(quatInverse);
+                        position.copy(scope.target).add(offset);
+                        scope.camera.lookAt(scope.target);
+
+                        scale = 1;
+
+                        if (lastPosition.distanceToSquared(scope.camera.position) > 0.00001 ||
+                            8 * (1 - lastQuaternion.dot(scope.camera.quaternion)) > 0.00001) {
+                            lastPosition.copy(scope.camera.position);
+                            lastQuaternion.copy(scope.camera.quaternion);
+                            return true;
+                        }
+                        return false;
+                    };
+                }();
+
+                this.domElement.addEventListener('mousedown', onMouseDown);
+                this.domElement.addEventListener('wheel', onMouseWheel);
+            };
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 1, 0);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 5;
+            controls.maxDistance = 15;
+            controls.maxPolarAngle = Math.PI / 2;
+            controls.update();
+        }
+
+        function setupLighting() {
+            // Ambient light for overall illumination
+            const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+            scene.add(ambientLight);
+
+            // Key light (main light source)
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            keyLight.position.set(5, 8, 5);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.camera.near = 0.5;
+            keyLight.shadow.camera.far = 50;
+            keyLight.shadow.camera.left = -10;
+            keyLight.shadow.camera.right = 10;
+            keyLight.shadow.camera.top = 10;
+            keyLight.shadow.camera.bottom = -10;
+            scene.add(keyLight);
+
+            // Fill light (softer, from the side)
+            const fillLight = new THREE.PointLight(0x4080ff, 0.5);
+            fillLight.position.set(-5, 3, 3);
+            scene.add(fillLight);
+
+            // Accent light (warm glow)
+            const accentLight = new THREE.PointLight(0xffaa00, 0.4);
+            accentLight.position.set(0, 2, -3);
+            scene.add(accentLight);
+
+            // Rim light for monitors
+            const rimLight = new THREE.PointLight(0x00d4ff, 0.6);
+            rimLight.position.set(0, 2, 2);
+            scene.add(rimLight);
+        }
+
+        function createDesk() {
+            // Desk surface
+            const deskGeometry = new THREE.BoxGeometry(8, 0.1, 4);
+            const deskMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4a3728,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            const desk = new THREE.Mesh(deskGeometry, deskMaterial);
+            desk.position.y = 0.5;
+            desk.receiveShadow = true;
+            desk.castShadow = true;
+            scene.add(desk);
+
+            // Desk legs
+            const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5);
+            const legMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2a1a18,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+
+            const legPositions = [
+                [-3.5, 0.25, -1.5],
+                [3.5, 0.25, -1.5],
+                [-3.5, 0.25, 1.5],
+                [3.5, 0.25, 1.5]
+            ];
+
+            legPositions.forEach(pos => {
+                const leg = new THREE.Mesh(legGeometry, legMaterial);
+                leg.position.set(...pos);
+                leg.castShadow = true;
+                scene.add(leg);
+            });
+
+            // Floor
+            const floorGeometry = new THREE.PlaneGeometry(30, 30);
+            const floorMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1a1625,
+                roughness: 0.9,
+                metalness: 0.1
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+        }
+
+        function createCharacter() {
+            // Simple geometric character - a stylized figure made of basic shapes
+            character = new THREE.Group();
+
+            // Body (rounded box)
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3a5a7a,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 1.2;
+            body.castShadow = true;
+            character.add(body);
+
+            // Head (sphere)
+            const headGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+            const headMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffdbac,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.85;
+            head.castShadow = true;
+            character.add(head);
+
+            // Eyes (simple dots)
+            const eyeGeometry = new THREE.SphereGeometry(0.04, 16, 16);
+            const eyeMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2a2a2a,
+                roughness: 0.4
+            });
+
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.08, 1.9, 0.22);
+            character.add(leftEye);
+
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.08, 1.9, 0.22);
+            character.add(rightEye);
+
+            // Arms
+            const armGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.6);
+            const armMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3a5a7a,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+
+            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+            leftArm.position.set(-0.4, 1.1, 0);
+            leftArm.rotation.z = 0.3;
+            leftArm.castShadow = true;
+            character.add(leftArm);
+
+            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+            rightArm.position.set(0.4, 1.1, 0);
+            rightArm.rotation.z = -0.3;
+            rightArm.castShadow = true;
+            character.add(rightArm);
+
+            // Position character at desk
+            character.position.set(0, 0.55, -0.5);
+            scene.add(character);
+
+            // Store reference to head for animation
+            character.userData.head = head;
+            character.userData.body = body;
+        }
+
+        function createMonitors() {
+            projects.forEach((project, index) => {
+                const monitor = createMonitor(project);
+                monitor.userData = {
+                    projectId: project.id,
+                    projectIndex: index,
+                    originalY: project.monitorPosition.y,
+                    isHovered: false
+                };
+                monitors.push(monitor);
+                scene.add(monitor);
+            });
+        }
+
+        function createMonitor(project) {
+            const monitor = new THREE.Group();
+
+            // Monitor stand
+            const standGeometry = new THREE.CylinderGeometry(0.05, 0.08, 0.3);
+            const standMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2a2a2a,
+                roughness: 0.5,
+                metalness: 0.7
+            });
+            const stand = new THREE.Mesh(standGeometry, standMaterial);
+            stand.position.y = 0.15;
+            stand.castShadow = true;
+            monitor.add(stand);
+
+            // Monitor frame
+            const frameGeometry = new THREE.BoxGeometry(0.8, 0.5, 0.05);
+            const frameMaterial = new THREE.MeshStandardMaterial({
+                color: 0x1a1a1a,
+                roughness: 0.4,
+                metalness: 0.8
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.y = 0.5;
+            frame.castShadow = true;
+            monitor.add(frame);
+
+            // Monitor screen (this will show the project thumbnail)
+            const screenGeometry = new THREE.PlaneGeometry(0.7, 0.4);
+
+            // Load texture
+            const textureLoader = new THREE.TextureLoader();
+            const texture = textureLoader.load(project.thumbnail);
+
+            const screenMaterial = new THREE.MeshStandardMaterial({
+                map: texture,
+                emissive: 0x00d4ff,
+                emissiveIntensity: 0.3,
+                roughness: 0.2,
+                metalness: 0.5
+            });
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 0.5, 0.026);
+            monitor.add(screen);
+
+            // Glow effect (hidden by default)
+            const glowGeometry = new THREE.PlaneGeometry(0.75, 0.45);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00d4ff,
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            glow.position.set(0, 0.5, 0.027);
+            monitor.add(glow);
+
+            // Position monitor
+            monitor.position.set(
+                project.monitorPosition.x,
+                project.monitorPosition.y,
+                project.monitorPosition.z
+            );
+
+            // Rotate monitor to face center
+            monitor.lookAt(0, monitor.position.y, -1);
+
+            // Store references for animation
+            monitor.userData.screen = screen;
+            monitor.userData.glow = glow;
+            monitor.userData.frame = frame;
+
+            return monitor;
+        }
+
+        function createEnvironment() {
+            // Coffee cup on desk
+            const cupGroup = new THREE.Group();
+
+            const cupGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.15, 32);
+            const cupMaterial = new THREE.MeshStandardMaterial({
+                color: 0xeeeeee,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const cup = new THREE.Mesh(cupGeometry, cupMaterial);
+            cup.castShadow = true;
+            cupGroup.add(cup);
+
+            const coffeeGeometry = new THREE.CircleGeometry(0.09, 32);
+            const coffeeMaterial = new THREE.MeshStandardMaterial({
+                color: 0x4a2511,
+                roughness: 0.8
+            });
+            const coffee = new THREE.Mesh(coffeeMaterial, coffeeGeometry);
+            coffee.rotation.x = -Math.PI / 2;
+            coffee.position.y = 0.076;
+            cupGroup.add(coffee);
+
+            cupGroup.position.set(2.5, 0.62, 1.2);
+            scene.add(cupGroup);
+
+            // Small plant
+            const potGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.15, 32);
+            const potMaterial = new THREE.MeshStandardMaterial({
+                color: 0xcc6633,
+                roughness: 0.7
+            });
+            const pot = new THREE.Mesh(potGeometry, potMaterial);
+            pot.position.set(-2.8, 0.62, 1);
+            pot.castShadow = true;
+            scene.add(pot);
+
+            const leafGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const leafMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2d5016,
+                roughness: 0.8
+            });
+            const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
+            leaves.scale.set(1, 1.5, 1);
+            leaves.position.set(-2.8, 0.82, 1);
+            leaves.castShadow = true;
+            scene.add(leaves);
+        }
+
+        // ==============================================
+        // ANIMATION & INTERACTION
+        // ==============================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // Character idle animation
+            if (character && character.userData.head) {
+                // Gentle breathing
+                character.userData.body.position.y = 1.2 + Math.sin(elapsedTime * 2) * 0.02;
+                character.userData.head.position.y = 1.85 + Math.sin(elapsedTime * 2) * 0.02;
+
+                // Subtle head tilt
+                character.userData.head.rotation.y = Math.sin(elapsedTime * 0.5) * 0.1;
+                character.userData.head.rotation.z = Math.sin(elapsedTime * 0.3) * 0.05;
+            }
+
+            // Monitor hover animations
+            monitors.forEach(monitor => {
+                const targetY = monitor.userData.isHovered ?
+                    monitor.userData.originalY + 0.1 :
+                    monitor.userData.originalY;
+
+                monitor.position.y += (targetY - monitor.position.y) * 0.1;
+
+                const targetGlowOpacity = monitor.userData.isHovered ? 0.4 : 0;
+                monitor.userData.glow.material.opacity +=
+                    (targetGlowOpacity - monitor.userData.glow.material.opacity) * 0.1;
+
+                const targetEmissive = monitor.userData.isHovered ? 0.5 : 0.3;
+                monitor.userData.screen.material.emissiveIntensity +=
+                    (targetEmissive - monitor.userData.screen.material.emissiveIntensity) * 0.1;
+            });
+
+            // Update controls
+            if (controls) controls.update();
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            // Calculate mouse position in normalized device coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Update raycaster
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check for intersections with monitors
+            const intersects = raycaster.intersectObjects(monitors, true);
+
+            // Reset all hover states
+            monitors.forEach(monitor => {
+                monitor.userData.isHovered = false;
+            });
+
+            // Set hover state for intersected monitor
+            if (intersects.length > 0) {
+                let object = intersects[0].object;
+                while (object.parent && !monitors.includes(object.parent)) {
+                    object = object.parent;
+                }
+                if (object.parent && monitors.includes(object.parent)) {
+                    object.parent.userData.isHovered = true;
+                    document.body.style.cursor = 'pointer';
+                    hoveredMonitor = object.parent;
+                } else {
+                    document.body.style.cursor = 'default';
+                    hoveredMonitor = null;
+                }
+            } else {
+                document.body.style.cursor = 'default';
+                hoveredMonitor = null;
+            }
+        }
+
+        function onMouseClick(event) {
+            // Don't trigger if clicking on modal
+            if (event.target.closest('#modal-overlay')) return;
+
+            if (hoveredMonitor) {
+                const projectIndex = hoveredMonitor.userData.projectIndex;
+                openModal(projectIndex);
+            }
+        }
+
+        function onKeyDown(event) {
+            // Tab key for navigation
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                selectedMonitorIndex = (selectedMonitorIndex + 1) % monitors.length;
+
+                // Reset all hover states
+                monitors.forEach(monitor => {
+                    monitor.userData.isHovered = false;
+                });
+
+                // Set selected monitor as hovered
+                monitors[selectedMonitorIndex].userData.isHovered = true;
+                hoveredMonitor = monitors[selectedMonitorIndex];
+            }
+
+            // Enter key to open modal
+            if (event.key === 'Enter' && hoveredMonitor) {
+                const projectIndex = hoveredMonitor.userData.projectIndex;
+                openModal(projectIndex);
+            }
+
+            // Escape key to close modal
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        }
+
+        // ==============================================
+        // MODAL SYSTEM
+        // ==============================================
+        function openModal(projectIndex) {
+            const project = projects[projectIndex];
+
+            // Populate modal
+            document.getElementById('modal-title').textContent = project.title;
+            document.getElementById('modal-description').textContent = project.description;
+            document.getElementById('modal-view-button').href = project.liveUrl;
+
+            // Add technology tags
+            const techTagsContainer = document.getElementById('modal-tech-tags');
+            techTagsContainer.innerHTML = '';
+            project.technologies.forEach(tech => {
+                const tag = document.createElement('span');
+                tag.className = 'tech-tag';
+                tag.textContent = tech;
+                techTagsContainer.appendChild(tag);
+            });
+
+            // Show/hide screenshot
+            const screenshot = document.getElementById('modal-screenshot');
+            if (project.screenshot) {
+                screenshot.src = project.screenshot;
+                screenshot.style.display = 'block';
+            } else {
+                screenshot.style.display = 'none';
+            }
+
+            // Show modal
+            const modalOverlay = document.getElementById('modal-overlay');
+            modalOverlay.classList.add('active');
+
+            // Disable controls while modal is open
+            if (controls) controls.enabled = false;
+        }
+
+        function closeModal() {
+            const modalOverlay = document.getElementById('modal-overlay');
+            modalOverlay.classList.remove('active');
+
+            // Re-enable controls
+            if (controls) controls.enabled = true;
+
+            // Reset hover state
+            monitors.forEach(monitor => {
+                monitor.userData.isHovered = false;
+            });
+            hoveredMonitor = null;
+            selectedMonitorIndex = -1;
+        }
+
+        // Modal close button handlers
+        document.getElementById('modal-close').addEventListener('click', closeModal);
+        document.getElementById('modal-close-button').addEventListener('click', closeModal);
+        document.getElementById('modal-overlay').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        // ==============================================
+        // INITIALIZE
+        // ==============================================
+        init();
+    </script>
+</body>
+</html>
