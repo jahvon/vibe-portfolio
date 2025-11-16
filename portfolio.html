@@ -288,6 +288,8 @@
 
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GLTFLoader for loading character model -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
         // ==============================================
@@ -666,119 +668,94 @@
         }
 
         function createCharacter() {
-            // Geometric character - Firewatch/Monument Valley aesthetic
-            character = new THREE.Group();
+            // Load external GLB character model
+            const deskHeight = 0.05;
+            const loader = new THREE.GLTFLoader();
 
-            // Body (teal hoodie) - leaning forward posture
+            loader.load(
+                './assets/character.glb',
+                // Success callback
+                function(gltf) {
+                    character = gltf.scene;
+
+                    // Position character at desk level (seated, feet at desk surface)
+                    character.position.set(0, deskHeight, -0.5);
+
+                    // Scale to appropriate size (adjust based on your model)
+                    character.scale.set(1, 1, 1);
+
+                    // Rotate to face monitors (facing forward/positive Z direction)
+                    character.rotation.y = 0;
+
+                    // Enable shadows for the character
+                    character.traverse(function(node) {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+
+                            // Optional: Override materials to match scene aesthetic
+                            if (node.material) {
+                                node.material.roughness = Math.max(node.material.roughness || 0.5, 0.7);
+                                node.material.metalness = Math.min(node.material.metalness || 0.1, 0.2);
+                            }
+                        }
+                    });
+
+                    scene.add(character);
+
+                    // Store reference for animation (if model has animations)
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        const mixer = new THREE.AnimationMixer(character);
+                        const idleAnimation = mixer.clipAction(gltf.animations[0]);
+                        idleAnimation.play();
+                        character.userData.mixer = mixer;
+                    }
+
+                    console.log('Character model loaded successfully');
+                },
+                // Progress callback
+                function(xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                // Error callback
+                function(error) {
+                    console.error('Error loading character model:', error);
+                    console.warn('Creating fallback placeholder character');
+                    createFallbackCharacter();
+                }
+            );
+        }
+
+        function createFallbackCharacter() {
+            // Fallback: Simple placeholder if GLB fails to load
+            character = new THREE.Group();
+            const deskHeight = 0.05;
+
             const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.5);
             const bodyMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d7f8f, // Warm teal
+                color: 0x2d7f8f,
                 roughness: 0.85,
                 metalness: 0.0
             });
             const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.position.y = 1.1;
-            body.rotation.x = 0.1; // Lean forward slightly
+            body.position.y = 0.45;
             body.castShadow = true;
             character.add(body);
 
-            // Head (larger, proportional 1:4) - rounded geometric
             const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
             const headMaterial = new THREE.MeshStandardMaterial({
-                color: 0xffcfa0, // Warm peach
+                color: 0xffcfa0,
                 roughness: 0.9,
                 metalness: 0.0
             });
             const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 1.75;
-            head.position.z = 0.05;
+            head.position.y = 1.1;
             head.castShadow = true;
             character.add(head);
 
-            // Eyes (simple geometric dots)
-            const eyeGeometry = new THREE.SphereGeometry(0.05, 12, 12);
-            const eyeMaterial = new THREE.MeshStandardMaterial({
-                color: 0x1a1a1a,
-                roughness: 0.3,
-                metalness: 0.0
-            });
-
-            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            leftEye.position.set(-0.1, 1.8, 0.28);
-            character.add(leftEye);
-
-            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-            rightEye.position.set(0.1, 1.8, 0.28);
-            character.add(rightEye);
-
-            // Arms - reaching toward keyboard
-            const armMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d7f8f, // Match hoodie
-                roughness: 0.85,
-                metalness: 0.0
-            });
-
-            // Upper left arm
-            const upperArmGeometry = new THREE.CylinderGeometry(0.09, 0.09, 0.4, 8);
-            const leftUpperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
-            leftUpperArm.position.set(-0.38, 1.15, 0.1);
-            leftUpperArm.rotation.z = 0.4;
-            leftUpperArm.rotation.x = 0.3;
-            leftUpperArm.castShadow = true;
-            character.add(leftUpperArm);
-
-            // Lower left arm (forearm)
-            const lowerArmGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.35, 8);
-            const leftLowerArm = new THREE.Mesh(lowerArmGeometry, armMaterial);
-            leftLowerArm.position.set(-0.5, 0.8, 0.35);
-            leftLowerArm.rotation.z = 0.2;
-            leftLowerArm.rotation.x = 1.2;
-            leftLowerArm.castShadow = true;
-            character.add(leftLowerArm);
-
-            // Left hand (simple geometric mitt)
-            const handGeometry = new THREE.BoxGeometry(0.12, 0.08, 0.15);
-            const handMaterial = new THREE.MeshStandardMaterial({
-                color: 0xffcfa0, // Match skin tone
-                roughness: 0.9,
-                metalness: 0.0
-            });
-            const leftHand = new THREE.Mesh(handGeometry, handMaterial);
-            leftHand.position.set(-0.45, 0.6, 0.55);
-            leftHand.rotation.x = 0.3;
-            leftHand.castShadow = true;
-            character.add(leftHand);
-
-            // Upper right arm
-            const rightUpperArm = new THREE.Mesh(upperArmGeometry, armMaterial);
-            rightUpperArm.position.set(0.38, 1.15, 0.1);
-            rightUpperArm.rotation.z = -0.4;
-            rightUpperArm.rotation.x = 0.3;
-            rightUpperArm.castShadow = true;
-            character.add(rightUpperArm);
-
-            // Lower right arm
-            const rightLowerArm = new THREE.Mesh(lowerArmGeometry, armMaterial);
-            rightLowerArm.position.set(0.5, 0.8, 0.35);
-            rightLowerArm.rotation.z = -0.2;
-            rightLowerArm.rotation.x = 1.2;
-            rightLowerArm.castShadow = true;
-            character.add(rightLowerArm);
-
-            // Right hand
-            const rightHand = new THREE.Mesh(handGeometry, handMaterial);
-            rightHand.position.set(0.45, 0.6, 0.55);
-            rightHand.rotation.x = 0.3;
-            rightHand.castShadow = true;
-            character.add(rightHand);
-
-            // Position character at desk (seated AT desk level - bottom of body at desk surface)
-            // Body center is at 1.1, body height is 0.9, so bottom is at 0.65
-            // To place bottom at desk surface (0.05), position at 0.05 - 0.65 = -0.6
-            character.position.set(0, -0.6, -0.5);
+            character.position.set(0, deskHeight, -0.5);
             scene.add(character);
 
-            // Store references for animation
             character.userData.head = head;
             character.userData.body = body;
         }
@@ -992,13 +969,19 @@
         function animate() {
             requestAnimationFrame(animate);
 
+            const delta = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
 
-            // Character idle animation
-            if (character && character.userData.head) {
+            // Update character animation mixer (if model has animations)
+            if (character && character.userData.mixer) {
+                character.userData.mixer.update(delta);
+            }
+
+            // Fallback character idle animation (for placeholder character)
+            if (character && character.userData.head && character.userData.body) {
                 // Gentle breathing
-                character.userData.body.position.y = 1.2 + Math.sin(elapsedTime * 2) * 0.02;
-                character.userData.head.position.y = 1.85 + Math.sin(elapsedTime * 2) * 0.02;
+                character.userData.body.position.y = 0.45 + Math.sin(elapsedTime * 2) * 0.02;
+                character.userData.head.position.y = 1.1 + Math.sin(elapsedTime * 2) * 0.02;
 
                 // Subtle head tilt
                 character.userData.head.rotation.y = Math.sin(elapsedTime * 0.5) * 0.1;
