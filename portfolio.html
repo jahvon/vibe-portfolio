@@ -400,22 +400,14 @@
             // Lighting
             setupLighting();
 
-            // Create environment
-            createDesk();
-            createCharacter();
-            createMonitors();
-            createEnvironment();
+            // Load character FIRST, then create everything else based on its dimensions
+            loadCharacterAndSetup();
 
             // Event listeners
             window.addEventListener('resize', onWindowResize);
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('click', onMouseClick);
             window.addEventListener('keydown', onKeyDown);
-
-            // Hide loading screen
-            setTimeout(() => {
-                document.getElementById('loading-screen').classList.add('hidden');
-            }, 1000);
 
             // Start animation
             animate();
@@ -551,6 +543,159 @@
             controls.update();
         }
 
+        function loadCharacterAndSetup() {
+            const loader = new THREE.GLTFLoader();
+
+            loader.load(
+                './assets/character.glb',
+                // Success callback - character loaded, now measure and build scene
+                function(gltf) {
+                    character = gltf.scene;
+
+                    // MEASURE the character's actual dimensions
+                    const box = new THREE.Box3().setFromObject(character);
+                    const size = box.getSize(new THREE.Vector3());
+                    const characterHeight = size.y;
+
+                    console.log('Character loaded - Height:', characterHeight);
+
+                    // CALCULATE all positions based on character
+                    const deskHeight = characterHeight * 0.6;  // Desk at waist height
+                    const deskSurfaceY = deskHeight + 0.1;     // Top of desk surface
+
+                    console.log('Calculated desk height:', deskHeight);
+                    console.log('Desk surface at:', deskSurfaceY);
+
+                    // Scale character to reasonable size (target ~1.5-2 units tall)
+                    const targetHeight = 1.8;
+                    const scale = targetHeight / characterHeight;
+                    character.scale.set(scale, scale, scale);
+
+                    // Recalculate after scaling
+                    const scaledHeight = targetHeight;
+                    const finalDeskHeight = scaledHeight * 0.6;
+                    const finalDeskSurfaceY = finalDeskHeight + 0.1;
+
+                    console.log('After scaling - Character height:', scaledHeight);
+                    console.log('Final desk height:', finalDeskHeight);
+                    console.log('Final desk surface:', finalDeskSurfaceY);
+
+                    // Position character on floor
+                    character.position.set(0, 0, -0.5);
+                    character.rotation.y = 0;
+
+                    // Enable shadows
+                    character.traverse(function(node) {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                            if (node.material) {
+                                node.material.roughness = Math.max(node.material.roughness || 0.5, 0.7);
+                                node.material.metalness = Math.min(node.material.metalness || 0.1, 0.2);
+                            }
+                        }
+                    });
+
+                    scene.add(character);
+
+                    // NO ANIMATIONS - character should be completely still
+                    console.log('Character positioned on floor at y=0');
+
+                    // Now create everything else based on calculated dimensions
+                    createDesk(finalDeskHeight);
+                    createMonitors(finalDeskSurfaceY);
+                    createEnvironment(finalDeskSurfaceY);
+
+                    // Update monitor positions in projects array
+                    updateMonitorPositions(finalDeskSurfaceY);
+
+                    // Hide loading screen
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').classList.add('hidden');
+                    }, 500);
+                },
+                // Progress callback
+                function(xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                // Error callback - use fallback
+                function(error) {
+                    console.error('Error loading character model:', error);
+
+                    if (window.location.protocol === 'file:') {
+                        console.error('❌ CORS Error: Cannot load GLB files using file:// protocol');
+                        console.info('💡 Solution: Run a local web server instead:');
+                        console.info('   Option 1: python3 -m http.server 8000');
+                        console.info('   Option 2: npx http-server');
+                        console.info('   Then visit: http://localhost:8000/portfolio.html');
+                    }
+
+                    console.warn('Creating fallback placeholder character');
+                    createFallbackCharacterAndSetup();
+                }
+            );
+        }
+
+        function createFallbackCharacterAndSetup() {
+            // Fallback: Simple placeholder if GLB fails to load
+            character = new THREE.Group();
+
+            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.5);
+            const bodyMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2d7f8f,
+                roughness: 0.85,
+                metalness: 0.0
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.y = 0.45;
+            body.castShadow = true;
+            character.add(body);
+
+            const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
+            const headMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffcfa0,
+                roughness: 0.9,
+                metalness: 0.0
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 1.1;
+            head.castShadow = true;
+            character.add(head);
+
+            character.position.set(0, 0, -0.5);
+            scene.add(character);
+
+            character.userData.head = head;
+            character.userData.body = body;
+
+            // Calculate based on fallback character dimensions (~1.4 units tall)
+            const characterHeight = 1.4;
+            const deskHeight = characterHeight * 0.6;
+            const deskSurfaceY = deskHeight + 0.1;
+
+            console.log('Fallback character created - height:', characterHeight);
+            console.log('Desk height:', deskHeight, 'Surface:', deskSurfaceY);
+
+            // Create scene with calculated dimensions
+            createDesk(deskHeight);
+            createMonitors(deskSurfaceY);
+            createEnvironment(deskSurfaceY);
+            updateMonitorPositions(deskSurfaceY);
+
+            // Hide loading screen
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+            }, 500);
+        }
+
+        function updateMonitorPositions(deskSurfaceY) {
+            // Update all monitor Y positions in projects array
+            projects.forEach(project => {
+                project.monitorPosition.y = deskSurfaceY;
+            });
+            console.log('Monitor positions updated to y =', deskSurfaceY);
+        }
+
         function setupLighting() {
             // Ambient light for overall illumination - increased brightness
             const ambientLight = new THREE.AmbientLight(0x5a5a7a, 1.2);
@@ -586,9 +731,8 @@
             scene.add(rimLight);
         }
 
-        function createDesk() {
-            // L-shaped desk at waist height (y=1.0) - elevated above blue floor
-            const deskHeight = 1.0;
+        function createDesk(deskHeight) {
+            // L-shaped desk at calculated waist height - elevated above blue floor
             const deskThickness = 0.2;
 
             const deskMaterial = new THREE.MeshStandardMaterial({
@@ -670,120 +814,14 @@
             scene.add(floor);
         }
 
-        function createCharacter() {
-            // Load external GLB character model
-            const loader = new THREE.GLTFLoader();
-
-            loader.load(
-                './assets/character.glb',
-                // Success callback
-                function(gltf) {
-                    character = gltf.scene;
-
-                    // Get actual size of loaded model
-                    const box = new THREE.Box3().setFromObject(character);
-                    const size = box.getSize(new THREE.Vector3());
-
-                    // Scale to target height (standing character should be ~1.5 units tall)
-                    const targetHeight = 1.5;
-                    const scale = targetHeight / size.y;
-                    character.scale.set(scale, scale, scale);
-
-                    // Position character on floor (standing on blue floor at y=0)
-                    character.position.set(0, 0, -0.5);
-
-                    // Rotate to face monitors (facing forward/positive Z direction)
-                    character.rotation.y = 0;
-
-                    // Enable shadows for the character
-                    character.traverse(function(node) {
-                        if (node.isMesh) {
-                            node.castShadow = true;
-                            node.receiveShadow = true;
-
-                            // Optional: Override materials to match scene aesthetic
-                            if (node.material) {
-                                node.material.roughness = Math.max(node.material.roughness || 0.5, 0.7);
-                                node.material.metalness = Math.min(node.material.metalness || 0.1, 0.2);
-                            }
-                        }
-                    });
-
-                    scene.add(character);
-
-                    // NO ANIMATIONS - character should be completely still
-                    // Do not create mixer or play any animation clips
-
-                    console.log('Character model loaded successfully');
-                    console.log('Original size:', size);
-                    console.log('Scale factor:', scale);
-                },
-                // Progress callback
-                function(xhr) {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                // Error callback
-                function(error) {
-                    console.error('Error loading character model:', error);
-
-                    // Check if it's a CORS error from file:// protocol
-                    if (window.location.protocol === 'file:') {
-                        console.error('❌ CORS Error: Cannot load GLB files using file:// protocol');
-                        console.info('💡 Solution: Run a local web server instead:');
-                        console.info('   Option 1: python3 -m http.server 8000');
-                        console.info('   Option 2: npx http-server');
-                        console.info('   Then visit: http://localhost:8000/portfolio.html');
-                    }
-
-                    console.warn('Creating fallback placeholder character');
-                    createFallbackCharacter();
-                }
-            );
-        }
-
-        function createFallbackCharacter() {
-            // Fallback: Simple placeholder if GLB fails to load
-            character = new THREE.Group();
-
-            const bodyGeometry = new THREE.BoxGeometry(0.6, 0.9, 0.5);
-            const bodyMaterial = new THREE.MeshStandardMaterial({
-                color: 0x2d7f8f,
-                roughness: 0.85,
-                metalness: 0.0
-            });
-            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.position.y = 0.45;
-            body.castShadow = true;
-            character.add(body);
-
-            const headGeometry = new THREE.SphereGeometry(0.32, 16, 16);
-            const headMaterial = new THREE.MeshStandardMaterial({
-                color: 0xffcfa0,
-                roughness: 0.9,
-                metalness: 0.0
-            });
-            const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.y = 1.1;
-            head.castShadow = true;
-            character.add(head);
-
-            // Position character on floor (standing on blue floor at y=0)
-            character.position.set(0, 0, -0.5);
-            scene.add(character);
-
-            character.userData.head = head;
-            character.userData.body = body;
-        }
-
-        function createMonitors() {
-            // Desk surface at y=1.1 (desk center at y=1.0, thickness=0.2, so top at 1.0 + 0.1)
-            const deskHeight = 1.1;
+        function createMonitors(deskSurfaceY) {
+            // Monitors rest on calculated desk surface height
             projects.forEach((project, index) => {
                 const monitor = createMonitor(project);
                 monitor.userData = {
                     projectId: project.id,
                     projectIndex: index,
-                    originalY: deskHeight,  // Monitors rest on desk surface
+                    originalY: deskSurfaceY,  // Monitors rest on desk surface
                     isHovered: false
                 };
                 monitors.push(monitor);
@@ -867,9 +905,8 @@
             return monitor;
         }
 
-        function createEnvironment() {
-            // Desk surface at y=1.1 (desk center at y=1.0, thickness=0.2, so top at 1.0 + 0.1)
-            const deskHeight = 1.1;
+        function createEnvironment(deskSurfaceY) {
+            // Use calculated desk surface height for all objects
 
             // Keyboard directly in front of character
             const keyboardGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.3);
@@ -879,7 +916,7 @@
                 metalness: 0.1
             });
             const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
-            keyboard.position.set(0, deskHeight + 0.025, 0.2);
+            keyboard.position.set(0, deskSurfaceY + 0.025, 0.2);
             keyboard.castShadow = true;
             scene.add(keyboard);
 
@@ -890,7 +927,7 @@
                 roughness: 0.95
             });
             const mousepad = new THREE.Mesh(mousepadGeometry, mousepadMaterial);
-            mousepad.position.set(0.7, deskHeight + 0.005, 0.2);
+            mousepad.position.set(0.7, deskSurfaceY + 0.005, 0.2);
             mousepad.castShadow = true;
             scene.add(mousepad);
 
@@ -901,7 +938,7 @@
                 metalness: 0.1
             });
             const mouse = new THREE.Mesh(mouseGeometry, mouseMaterial);
-            mouse.position.set(0.7, deskHeight + 0.025, 0.2);
+            mouse.position.set(0.7, deskSurfaceY + 0.025, 0.2);
             mouse.castShadow = true;
             scene.add(mouse);
 
@@ -912,7 +949,7 @@
                 roughness: 0.95
             });
             const notebook = new THREE.Mesh(notebookGeometry, notebookMaterial);
-            notebook.position.set(-2.3, deskHeight + 0.01, 0.5);
+            notebook.position.set(-2.3, deskSurfaceY + 0.01, 0.5);
             notebook.rotation.y = -0.3;
             notebook.castShadow = true;
             scene.add(notebook);
@@ -925,7 +962,7 @@
                 metalness: 0.2
             });
             const pen = new THREE.Mesh(penGeometry, penMaterial);
-            pen.position.set(-2.2, deskHeight + 0.03, 0.6);
+            pen.position.set(-2.2, deskSurfaceY + 0.03, 0.6);
             pen.rotation.z = Math.PI / 2;
             pen.rotation.y = 0.5;
             pen.castShadow = true;
@@ -954,7 +991,7 @@
             coffee.position.y = 0.076;
             cupGroup.add(coffee);
 
-            cupGroup.position.set(2.3, deskHeight + 0.075, 0.5);
+            cupGroup.position.set(2.3, deskSurfaceY + 0.075, 0.5);
             scene.add(cupGroup);
 
             // Small plant on back desk
@@ -964,7 +1001,7 @@
                 roughness: 0.9
             });
             const pot = new THREE.Mesh(potGeometry, potMaterial);
-            pot.position.set(0, deskHeight + 0.075, -1.1);
+            pot.position.set(0, deskSurfaceY + 0.075, -1.1);
             pot.castShadow = true;
             scene.add(pot);
 
@@ -975,7 +1012,7 @@
             });
             const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
             leaves.scale.set(1, 1.5, 1);
-            leaves.position.set(0, deskHeight + 0.27, -1.1);
+            leaves.position.set(0, deskSurfaceY + 0.27, -1.1);
             leaves.castShadow = true;
             scene.add(leaves);
         }
