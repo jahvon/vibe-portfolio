@@ -591,7 +591,10 @@
                     character.position.set(0, 0, 2.5);  // In front of wall
                     character.rotation.y = Math.PI;  // Face toward wall (negative Z direction)
 
-                    // Enable shadows
+                    // Enable shadows and find head/body for animation
+                    let headMesh = null;
+                    let bodyMesh = null;
+
                     character.traverse(function(node) {
                         if (node.isMesh) {
                             node.castShadow = true;
@@ -600,8 +603,25 @@
                                 node.material.roughness = Math.max(node.material.roughness || 0.5, 0.7);
                                 node.material.metalness = Math.min(node.material.metalness || 0.1, 0.2);
                             }
+
+                            // Try to identify head and body meshes by name
+                            const nodeName = node.name.toLowerCase();
+                            if (nodeName.includes('head') || nodeName.includes('skull')) {
+                                headMesh = node;
+                            } else if (nodeName.includes('body') || nodeName.includes('torso') || nodeName.includes('spine')) {
+                                bodyMesh = node;
+                            }
                         }
                     });
+
+                    // Store references for animation (fallback to character itself if not found)
+                    character.userData.head = headMesh || character;
+                    character.userData.body = bodyMesh || character;
+                    character.userData.isGLBModel = true;  // Flag to know it's not the fallback
+
+                    console.log('GLB character loaded:');
+                    console.log('  Head mesh found:', headMesh ? headMesh.name : 'Using entire character');
+                    console.log('  Body mesh found:', bodyMesh ? bodyMesh.name : 'Using entire character');
 
                     scene.add(character);
 
@@ -899,6 +919,7 @@
                     if (animationPhase < 3) {
                         shouldAnimate = true;
                     } else {
+                        console.log('Manual animation completed');
                         manualAnimationTriggered = false;
                         shouldAnimate = false;
                     }
@@ -915,18 +936,32 @@
                 }
 
                 if (shouldAnimate) {
-                    // Gentle breathing during animation
-                    character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
-                    character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
-                    // Subtle head tilt
-                    character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
-                    character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
+                    // Check if we're animating individual parts or the whole character
+                    if (character.userData.isGLBModel && character.userData.head === character) {
+                        // Animate entire GLB character (couldn't find specific head/body)
+                        character.rotation.y = Math.PI + Math.sin(animationPhase * 2) * 0.08;  // Subtle sway
+                        character.position.y = Math.sin(animationPhase * 4) * 0.03;  // Gentle bounce
+                    } else {
+                        // Animate individual parts (fallback character or found meshes)
+                        character.userData.body.position.y = 0.9 + Math.sin(animationPhase * 4) * 0.06;
+                        character.userData.head.position.y = 2.4 + Math.sin(animationPhase * 4) * 0.06;
+                        // Subtle head tilt
+                        character.userData.head.rotation.y = Math.sin(animationPhase * 2) * 0.15;
+                        character.userData.head.rotation.z = Math.sin(animationPhase * 1.5) * 0.08;
+                    }
                 } else {
                     // Reset to default position
-                    character.userData.body.position.y = 0.9;
-                    character.userData.head.position.y = 2.4;
-                    character.userData.head.rotation.y = 0;
-                    character.userData.head.rotation.z = 0;
+                    if (character.userData.isGLBModel && character.userData.head === character) {
+                        // Reset whole character
+                        character.rotation.y = Math.PI;  // Face wall
+                        character.position.y = 0;
+                    } else {
+                        // Reset individual parts
+                        character.userData.body.position.y = 0.9;
+                        character.userData.head.position.y = 2.4;
+                        character.userData.head.rotation.y = 0;
+                        character.userData.head.rotation.z = 0;
+                    }
                 }
             }
 
