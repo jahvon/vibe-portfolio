@@ -301,7 +301,7 @@
                 technologies: ["Three.js", "TensorFlow.js", "WebGL"],
                 liveUrl: "https://example.com/neural-viz",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ENeural Net%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: -3, y: 1.2, z: 0.5 }
+                monitorPosition: { x: -2.5, y: 0.05, z: -1.3 }  // Back left
             },
             {
                 id: 2,
@@ -310,7 +310,7 @@
                 technologies: ["WebGL", "GLSL", "JavaScript"],
                 liveUrl: "https://example.com/particles",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EParticles%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: -1.5, y: 1.2, z: 1.2 }
+                monitorPosition: { x: -1, y: 0.05, z: -1.3 }  // Back center-left
             },
             {
                 id: 3,
@@ -319,7 +319,7 @@
                 technologies: ["Canvas API", "P5.js", "React"],
                 liveUrl: "https://example.com/gen-art",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EGen Art%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: 0, y: 1.2, z: 1.5 }
+                monitorPosition: { x: 1, y: 0.05, z: -1.3 }  // Back center-right
             },
             {
                 id: 4,
@@ -328,7 +328,7 @@
                 technologies: ["Web Audio API", "Three.js", "Tone.js"],
                 liveUrl: "https://example.com/sound-sculpt",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ESound Wave%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: 1.5, y: 1.2, z: 1.2 }
+                monitorPosition: { x: 2.5, y: 0.05, z: -1.3 }  // Back right
             },
             {
                 id: 5,
@@ -337,7 +337,7 @@
                 technologies: ["GLSL", "WebGL", "CodeMirror"],
                 liveUrl: "https://example.com/shaders",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EShaders%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: 3, y: 1.2, z: 0.5 }
+                monitorPosition: { x: -2.9, y: 0.05, z: 0.8 }  // Left side
             },
             {
                 id: 6,
@@ -346,7 +346,7 @@
                 technologies: ["WebGL", "GLSL", "TypeScript"],
                 liveUrl: "https://example.com/fractals",
                 thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EFractals%3C/text%3E%3C/svg%3E",
-                monitorPosition: { x: 4, y: 1.2, z: -0.5 }
+                monitorPosition: { x: 2.9, y: 0.05, z: 0.8 }  // Right side
             }
         ];
 
@@ -539,8 +539,8 @@
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Target point at monitor screen height (desk surface + screen height)
-            controls.target.set(0, 0.55, 0.5);
+            // Target point at character head/monitor level
+            controls.target.set(0, 0.5, -0.3);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.minDistance = 3;
@@ -585,20 +585,46 @@
         }
 
         function createDesk() {
-            // Desk surface - positioned at y=0 (top surface at y=0.05)
-            const deskGeometry = new THREE.BoxGeometry(8, 0.1, 4);
+            // Wrap-around/U-shaped desk - positioned at y=0 (top surface at y=0.05)
             const deskMaterial = new THREE.MeshStandardMaterial({
                 color: 0xd4915a, // Warm wood tone
                 roughness: 0.85,
                 metalness: 0.0
             });
-            const desk = new THREE.Mesh(deskGeometry, deskMaterial);
-            desk.position.y = 0;
-            desk.receiveShadow = true;
-            desk.castShadow = true;
-            scene.add(desk);
 
-            // Desk legs
+            // Back section (behind character)
+            const backDeskGeometry = new THREE.BoxGeometry(6, 0.1, 1.2);
+            const backDesk = new THREE.Mesh(backDeskGeometry, deskMaterial);
+            backDesk.position.set(0, 0, -1.3);
+            backDesk.receiveShadow = true;
+            backDesk.castShadow = true;
+            scene.add(backDesk);
+
+            // Left arm (wrapping around left side)
+            const leftDeskGeometry = new THREE.BoxGeometry(1.2, 0.1, 3.5);
+            const leftDesk = new THREE.Mesh(leftDeskGeometry, deskMaterial);
+            leftDesk.position.set(-2.9, 0, 0.45);
+            leftDesk.receiveShadow = true;
+            leftDesk.castShadow = true;
+            scene.add(leftDesk);
+
+            // Right arm (wrapping around right side)
+            const rightDeskGeometry = new THREE.BoxGeometry(1.2, 0.1, 3.5);
+            const rightDesk = new THREE.Mesh(rightDeskGeometry, deskMaterial);
+            rightDesk.position.set(2.9, 0, 0.45);
+            rightDesk.receiveShadow = true;
+            rightDesk.castShadow = true;
+            scene.add(rightDesk);
+
+            // Front section (connecting the arms in front of character)
+            const frontDeskGeometry = new THREE.BoxGeometry(3.4, 0.1, 1.2);
+            const frontDesk = new THREE.Mesh(frontDeskGeometry, deskMaterial);
+            frontDesk.position.set(0, 0, 1.6);
+            frontDesk.receiveShadow = true;
+            frontDesk.castShadow = true;
+            scene.add(frontDesk);
+
+            // Desk legs for U-shaped desk
             const legGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5);
             const legMaterial = new THREE.MeshStandardMaterial({
                 color: 0xa87242, // Darker wood
@@ -607,10 +633,16 @@
             });
 
             const legPositions = [
-                [-3.5, -0.25, -1.5],
-                [3.5, -0.25, -1.5],
-                [-3.5, -0.25, 1.5],
-                [3.5, -0.25, 1.5]
+                // Back corners
+                [-2.8, -0.25, -1.8],
+                [2.8, -0.25, -1.8],
+                // Front corners (left side)
+                [-3.4, -0.25, 2.1],
+                // Front corners (right side)
+                [3.4, -0.25, 2.1],
+                // Middle support legs
+                [-2.2, -0.25, 0.5],
+                [2.2, -0.25, 0.5]
             ];
 
             legPositions.forEach(pos => {
@@ -740,8 +772,10 @@
             rightHand.castShadow = true;
             character.add(rightHand);
 
-            // Position character at desk (seated on desk surface)
-            character.position.set(0, 0.05, -0.5);
+            // Position character at desk (seated AT desk level - bottom of body at desk surface)
+            // Body center is at 1.1, body height is 0.9, so bottom is at 0.65
+            // To place bottom at desk surface (0.05), position at 0.05 - 0.65 = -0.6
+            character.position.set(0, -0.6, -0.5);
             scene.add(character);
 
             // Store references for animation
@@ -821,16 +855,16 @@
             glow.position.set(0, 0.5, 0.027);
             monitor.add(glow);
 
-            // Position monitor on desk surface (stand base touches desk at y=0.05)
-            const deskHeight = 0.05;
+            // Position monitor on desk surface using project data
             monitor.position.set(
                 project.monitorPosition.x,
-                deskHeight,  // All monitors rest on desk surface
+                project.monitorPosition.y,  // Monitors rest on desk surface
                 project.monitorPosition.z
             );
 
-            // Rotate monitor to face center
-            monitor.lookAt(0, monitor.position.y, -1);
+            // Rotate monitor to face character position (0, 0.5, -0.5)
+            const characterPos = new THREE.Vector3(0, 0.5, -0.5);
+            monitor.lookAt(characterPos);
 
             // Store references for animation
             monitor.userData.screen = screen;
@@ -843,7 +877,7 @@
         function createEnvironment() {
             const deskHeight = 0.05; // Top surface of the desk (desk at y=0 with height 0.1)
 
-            // Keyboard in front of character
+            // Keyboard directly in front of character
             const keyboardGeometry = new THREE.BoxGeometry(0.6, 0.05, 0.3);
             const keyboardMaterial = new THREE.MeshStandardMaterial({
                 color: 0x4a5a6a, // Dark blue-grey
@@ -851,18 +885,18 @@
                 metalness: 0.1
             });
             const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
-            keyboard.position.set(0, deskHeight + 0.025, 0.3);
+            keyboard.position.set(0, deskHeight + 0.025, 0.2);
             keyboard.castShadow = true;
             scene.add(keyboard);
 
-            // Mouse and mousepad
+            // Mouse and mousepad to the right
             const mousepadGeometry = new THREE.BoxGeometry(0.25, 0.01, 0.3);
             const mousepadMaterial = new THREE.MeshStandardMaterial({
                 color: 0x2d4a5a, // Deep teal-blue
                 roughness: 0.95
             });
             const mousepad = new THREE.Mesh(mousepadGeometry, mousepadMaterial);
-            mousepad.position.set(0.8, deskHeight + 0.005, 0.3);
+            mousepad.position.set(0.7, deskHeight + 0.005, 0.2);
             mousepad.castShadow = true;
             scene.add(mousepad);
 
@@ -873,18 +907,18 @@
                 metalness: 0.1
             });
             const mouse = new THREE.Mesh(mouseGeometry, mouseMaterial);
-            mouse.position.set(0.8, deskHeight + 0.025, 0.3);
+            mouse.position.set(0.7, deskHeight + 0.025, 0.2);
             mouse.castShadow = true;
             scene.add(mouse);
 
-            // Notebook on desk
+            // Notebook on left side of desk
             const notebookGeometry = new THREE.BoxGeometry(0.35, 0.02, 0.45);
             const notebookMaterial = new THREE.MeshStandardMaterial({
                 color: 0xc67f3a, // Warm orange-brown
                 roughness: 0.95
             });
             const notebook = new THREE.Mesh(notebookGeometry, notebookMaterial);
-            notebook.position.set(-1.2, deskHeight + 0.01, 0.5);
+            notebook.position.set(-2.3, deskHeight + 0.01, 0.5);
             notebook.rotation.y = -0.3;
             notebook.castShadow = true;
             scene.add(notebook);
@@ -897,13 +931,13 @@
                 metalness: 0.2
             });
             const pen = new THREE.Mesh(penGeometry, penMaterial);
-            pen.position.set(-1.1, deskHeight + 0.03, 0.6);
+            pen.position.set(-2.2, deskHeight + 0.03, 0.6);
             pen.rotation.z = Math.PI / 2;
             pen.rotation.y = 0.5;
             pen.castShadow = true;
             scene.add(pen);
 
-            // Coffee cup on desk
+            // Coffee cup on right side of desk
             const cupGroup = new THREE.Group();
 
             const cupGeometry = new THREE.CylinderGeometry(0.1, 0.08, 0.15, 16);
@@ -926,17 +960,17 @@
             coffee.position.y = 0.076;
             cupGroup.add(coffee);
 
-            cupGroup.position.set(2.5, deskHeight + 0.075, 1.2);
+            cupGroup.position.set(2.3, deskHeight + 0.075, 0.5);
             scene.add(cupGroup);
 
-            // Small plant
+            // Small plant on back desk
             const potGeometry = new THREE.CylinderGeometry(0.12, 0.1, 0.15, 16);
             const potMaterial = new THREE.MeshStandardMaterial({
                 color: 0xc85f3a, // Terracotta orange
                 roughness: 0.9
             });
             const pot = new THREE.Mesh(potGeometry, potMaterial);
-            pot.position.set(-2.8, deskHeight + 0.075, 1);
+            pot.position.set(0, deskHeight + 0.075, -1.1);
             pot.castShadow = true;
             scene.add(pot);
 
@@ -947,7 +981,7 @@
             });
             const leaves = new THREE.Mesh(leafGeometry, leafMaterial);
             leaves.scale.set(1, 1.5, 1);
-            leaves.position.set(-2.8, deskHeight + 0.27, 1);
+            leaves.position.set(0, deskHeight + 0.27, -1.1);
             leaves.castShadow = true;
             scene.add(leaves);
         }
