@@ -784,8 +784,7 @@
 
                     monitor.position.set(xPos, yPos, wallDistance);
 
-                    // Rotate monitors to face the character (180 degrees)
-                    monitor.rotation.y = Math.PI;
+                    // No rotation needed - monitors naturally face toward negative Z (toward camera/character)
 
                     // Add to userData (don't replace - createLargeTVMonitor already set screen, glow, frame, light)
                     monitor.userData.projectId = project.id;
