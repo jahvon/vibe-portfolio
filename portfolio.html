@@ -950,14 +950,18 @@
 
         function playCharacterAnimation() {
             if (clappingAction && idleAction) {
-                // Crossfade from idle to clapping
-                idleAction.fadeOut(0.3);  // Fade out idle over 0.3 seconds
-                clappingAction.reset();   // Reset clapping to start
-                clappingAction.fadeIn(0.3);  // Fade in clapping over 0.3 seconds
-                clappingAction.play();    // Start playing
-
+                // Properly crossfade from idle to clapping
                 console.log('Switching to CLAPPING animation');
                 console.log('  Duration:', clappingAction.getClip().duration.toFixed(2), 'seconds');
+
+                // Use Three.js built-in crossfade for smooth transition
+                idleAction.crossFadeTo(clappingAction, 0.3, false);
+
+                // Ensure clapping starts from beginning
+                clappingAction.reset();
+                clappingAction.setEffectiveTimeScale(1);
+                clappingAction.setEffectiveWeight(1);
+                clappingAction.play();
 
                 // After clapping finishes + hold time, fade back to idle
                 const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
@@ -965,9 +969,14 @@
                 setTimeout(() => {
                     if (clappingAction && idleAction) {
                         console.log('Switching back to IDLE animation');
-                        clappingAction.fadeOut(0.5);
+
+                        // Crossfade back to idle
+                        clappingAction.crossFadeTo(idleAction, 0.5, false);
+
+                        // Ensure idle starts properly
                         idleAction.reset();
-                        idleAction.fadeIn(0.5);
+                        idleAction.setEffectiveTimeScale(1);
+                        idleAction.setEffectiveWeight(1);
                         idleAction.play();
                     }
                 }, clappingDuration + holdTime);
