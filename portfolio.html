@@ -548,12 +548,12 @@
         }
 
         function setupLighting() {
-            // Ambient light for overall illumination
-            const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+            // Ambient light for overall illumination - increased brightness
+            const ambientLight = new THREE.AmbientLight(0x5a5a7a, 1.2);
             scene.add(ambientLight);
 
             // Key light (main light source)
-            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
             keyLight.position.set(5, 8, 5);
             keyLight.castShadow = true;
             keyLight.shadow.mapSize.width = 2048;
@@ -567,17 +567,17 @@
             scene.add(keyLight);
 
             // Fill light (softer, from the side)
-            const fillLight = new THREE.PointLight(0x4080ff, 0.5);
+            const fillLight = new THREE.PointLight(0x4080ff, 0.8);
             fillLight.position.set(-5, 3, 3);
             scene.add(fillLight);
 
             // Accent light (warm glow)
-            const accentLight = new THREE.PointLight(0xffaa00, 0.4);
+            const accentLight = new THREE.PointLight(0xffaa00, 0.7);
             accentLight.position.set(0, 2, -3);
             scene.add(accentLight);
 
             // Rim light for monitors
-            const rimLight = new THREE.PointLight(0x00d4ff, 0.6);
+            const rimLight = new THREE.PointLight(0x00d4ff, 1.0);
             rimLight.position.set(0, 2, 2);
             scene.add(rimLight);
         }
@@ -811,7 +811,7 @@
                 color: 0x4a2511,
                 roughness: 0.8
             });
-            const coffee = new THREE.Mesh(coffeeMaterial, coffeeGeometry);
+            const coffee = new THREE.Mesh(coffeeGeometry, coffeeMaterial);
             coffee.rotation.x = -Math.PI / 2;
             coffee.position.y = 0.076;
             cupGroup.add(coffee);
