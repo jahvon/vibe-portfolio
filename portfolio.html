@@ -678,11 +678,17 @@
                 function(gltf) {
                     character = gltf.scene;
 
+                    // Get actual size of loaded model
+                    const box = new THREE.Box3().setFromObject(character);
+                    const size = box.getSize(new THREE.Vector3());
+
+                    // Scale to target height (seated character should be ~1.5 units tall)
+                    const targetHeight = 1.5;
+                    const scale = targetHeight / size.y;
+                    character.scale.set(scale, scale, scale);
+
                     // Position character at desk level (seated, feet at desk surface)
                     character.position.set(0, deskHeight, -0.5);
-
-                    // Scale to appropriate size (adjust based on your model)
-                    character.scale.set(1, 1, 1);
 
                     // Rotate to face monitors (facing forward/positive Z direction)
                     character.rotation.y = 0;
@@ -703,15 +709,12 @@
 
                     scene.add(character);
 
-                    // Store reference for animation (if model has animations)
-                    if (gltf.animations && gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(character);
-                        const idleAnimation = mixer.clipAction(gltf.animations[0]);
-                        idleAnimation.play();
-                        character.userData.mixer = mixer;
-                    }
+                    // NO ANIMATIONS - character should be completely still
+                    // Do not create mixer or play any animation clips
 
                     console.log('Character model loaded successfully');
+                    console.log('Original size:', size);
+                    console.log('Scale factor:', scale);
                 },
                 // Progress callback
                 function(xhr) {
@@ -979,15 +982,11 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            const delta = clock.getDelta();
             const elapsedTime = clock.getElapsedTime();
 
-            // Update character animation mixer (if model has animations)
-            if (character && character.userData.mixer) {
-                character.userData.mixer.update(delta);
-            }
+            // NO character animations - character should be completely still
 
-            // Fallback character idle animation (for placeholder character)
+            // Fallback character idle animation (for placeholder character only)
             if (character && character.userData.head && character.userData.body) {
                 // Gentle breathing
                 character.userData.body.position.y = 0.45 + Math.sin(elapsedTime * 2) * 0.02;
