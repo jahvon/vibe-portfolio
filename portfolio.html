@@ -950,18 +950,41 @@
 
         function playCharacterAnimation() {
             if (clappingAction && idleAction) {
-                // Properly crossfade from idle to clapping
                 console.log('Switching to CLAPPING animation');
                 console.log('  Duration:', clappingAction.getClip().duration.toFixed(2), 'seconds');
 
-                // Use Three.js built-in crossfade for smooth transition
-                idleAction.crossFadeTo(clappingAction, 0.3, false);
+                // Stop idle action and start clapping with proper weight management
+                idleAction.enabled = true;
+                clappingAction.enabled = true;
 
-                // Ensure clapping starts from beginning
+                // Set initial weights
+                idleAction.setEffectiveWeight(1);
+                clappingAction.setEffectiveWeight(0);
+
+                // Reset and play clapping from start
                 clappingAction.reset();
-                clappingAction.setEffectiveTimeScale(1);
-                clappingAction.setEffectiveWeight(1);
                 clappingAction.play();
+
+                // Manual crossfade: transition weights over time
+                const fadeDuration = 0.3; // seconds
+                const fadeSteps = 30; // steps for smooth fade
+                const fadeInterval = (fadeDuration * 1000) / fadeSteps;
+                let fadeStep = 0;
+
+                const fadeToClapping = setInterval(() => {
+                    fadeStep++;
+                    const progress = fadeStep / fadeSteps;
+
+                    idleAction.setEffectiveWeight(1 - progress);
+                    clappingAction.setEffectiveWeight(progress);
+
+                    if (fadeStep >= fadeSteps) {
+                        clearInterval(fadeToClapping);
+                        // Ensure final states are correct
+                        idleAction.setEffectiveWeight(0);
+                        clappingAction.setEffectiveWeight(1);
+                    }
+                }, fadeInterval);
 
                 // After clapping finishes + hold time, fade back to idle
                 const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
@@ -970,14 +993,31 @@
                     if (clappingAction && idleAction) {
                         console.log('Switching back to IDLE animation');
 
-                        // Crossfade back to idle
-                        clappingAction.crossFadeTo(idleAction, 0.5, false);
-
-                        // Ensure idle starts properly
+                        // Reset and play idle
                         idleAction.reset();
-                        idleAction.setEffectiveTimeScale(1);
-                        idleAction.setEffectiveWeight(1);
                         idleAction.play();
+
+                        // Manual crossfade back to idle
+                        const backFadeDuration = 0.5; // seconds
+                        const backFadeSteps = 30;
+                        const backFadeInterval = (backFadeDuration * 1000) / backFadeSteps;
+                        let backFadeStep = 0;
+
+                        const fadeToIdle = setInterval(() => {
+                            backFadeStep++;
+                            const progress = backFadeStep / backFadeSteps;
+
+                            clappingAction.setEffectiveWeight(1 - progress);
+                            idleAction.setEffectiveWeight(progress);
+
+                            if (backFadeStep >= backFadeSteps) {
+                                clearInterval(fadeToIdle);
+                                // Ensure final states are correct
+                                clappingAction.setEffectiveWeight(0);
+                                clappingAction.enabled = false;
+                                idleAction.setEffectiveWeight(1);
+                            }
+                        }, backFadeInterval);
                     }
                 }, clappingDuration + holdTime);
 
