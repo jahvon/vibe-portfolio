@@ -376,8 +376,8 @@
                 0.1,
                 1000
             );
-            // Position behind character, over shoulder, looking at monitor wall
-            camera.position.set(0.5, 2.5, -1.5);
+            // Position behind character (larger Z), looking toward wall (toward -Z)
+            camera.position.set(0.5, 2.5, 5.5);
 
             // Renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -536,8 +536,8 @@
             };
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            // Target point at center of monitor wall (z=3.5 where monitors are)
-            controls.target.set(0, 1.8, 3.5);
+            // Target point at center of monitor wall (z=0 where monitors are)
+            controls.target.set(0, 1.8, 0);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.minDistance = 3;
@@ -587,9 +587,9 @@
                     console.log('Final desk height:', finalDeskHeight);
                     console.log('Final desk surface:', finalDeskSurfaceY);
 
-                    // Position character in front of monitor wall, facing monitors
-                    character.position.set(0, 0, 0);
-                    character.rotation.y = 0;  // Face forward toward monitors
+                    // Position character between camera and monitors, facing the wall
+                    character.position.set(0, 0, 2.5);  // In front of wall
+                    character.rotation.y = Math.PI;  // Face toward wall (negative Z direction)
 
                     // Enable shadows
                     character.traverse(function(node) {
@@ -606,7 +606,7 @@
                     scene.add(character);
 
                     // NO ANIMATIONS by default - will play once every 60 seconds
-                    console.log('Character positioned on floor at y=0, facing monitor wall');
+                    console.log('Character positioned at z=2.5, facing monitor wall at z=0');
 
                     // Create surveillance room setup
                     createFloor();
@@ -667,15 +667,15 @@
             head.castShadow = true;
             character.add(head);
 
-            character.position.set(0, 0, 0);
-            character.rotation.y = 0;  // Face monitors
+            character.position.set(0, 0, 2.5);  // In front of wall
+            character.rotation.y = Math.PI;  // Face toward wall (negative Z direction)
             scene.add(character);
 
             character.userData.head = head;
             character.userData.body = body;
 
             console.log('Fallback character created - height: 3.0 units');
-            console.log('Position: facing monitor wall');
+            console.log('Position: z=2.5, facing monitor wall at z=0');
 
             // Create surveillance room setup
             createFloor();
@@ -696,7 +696,7 @@
 
             // Subtle blue directional light from monitors (very dim)
             const monitorLight = new THREE.DirectionalLight(0x00d4ff, 0.3);
-            monitorLight.position.set(0, 2, 4);
+            monitorLight.position.set(0, 2, 0.5);  // At monitor wall position
             monitorLight.castShadow = true;
             monitorLight.shadow.mapSize.width = 1024;
             monitorLight.shadow.mapSize.height = 1024;
@@ -704,7 +704,7 @@
 
             // Rim light on character from monitor glow
             const rimLight = new THREE.PointLight(0x0099cc, 0.5);
-            rimLight.position.set(0, 1.5, 3);
+            rimLight.position.set(0, 1.5, 0);  // At monitor wall to light character
             scene.add(rimLight);
         }
 
@@ -737,7 +737,7 @@
                 metalness: 0.0
             });
             const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-            wall.position.set(0, 2, 4);  // Behind monitor wall
+            wall.position.set(0, 2, -0.5);  // Behind monitor wall (monitors at z=0)
             wall.receiveShadow = true;
             scene.add(wall);
         }
@@ -763,7 +763,7 @@
             const monitorWidth = 2.4;   // Large TV size (16:9 ratio)
             const monitorHeight = 1.35;
             const gap = 0.15;  // Small gap between monitors
-            const wallDistance = 3.5;  // Distance from origin
+            const wallDistance = 0;  // Monitors AT the wall (z=0)
             const baseHeight = 1.2;  // Bottom row starts here
 
             const rows = 2;
