@@ -359,7 +359,7 @@
         let monitors = [];
         let character;
         let mixer;  // Animation mixer for GLB animations
-        let idleAction, clappingAction;  // Specific animations
+        let idleAction;  // Idle animation
         let raycaster, mouse;
         let hoveredMonitor = null;
         let selectedMonitorIndex = -1;
@@ -565,14 +565,9 @@
                     const size = box.getSize(new THREE.Vector3());
                     const characterHeight = size.y;
 
-                    console.log('Character loaded - Height:', characterHeight);
-
                     // CALCULATE all positions based on character
                     const deskHeight = characterHeight * 0.6;  // Desk at waist height
                     const deskSurfaceY = deskHeight + 0.1;     // Top of desk surface
-
-                    console.log('Calculated desk height:', deskHeight);
-                    console.log('Desk surface at:', deskSurfaceY);
 
                     // Scale character to proper size (needs to be larger than monitors/objects)
                     const targetHeight = 3.0;  // Increased from 1.8 to make character bigger
@@ -584,10 +579,6 @@
                     const finalDeskHeight = scaledHeight * 0.6;
                     const deskThickness = 0.05;  // Thinner desk
                     const finalDeskSurfaceY = finalDeskHeight + (deskThickness / 2);
-
-                    console.log('After scaling - Character height:', scaledHeight);
-                    console.log('Final desk height:', finalDeskHeight);
-                    console.log('Final desk surface:', finalDeskSurfaceY);
 
                     // Position character between camera and monitors, facing the wall
                     character.position.set(0, 0, 2.5);  // In front of wall
@@ -620,59 +611,23 @@
                     if (gltf.animations && gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(character);
 
-                        console.log('=== ALL ANIMATIONS IN GLB ===');
-                        gltf.animations.forEach((clip, index) => {
-                            console.log(`  [${index}] "${clip.name}" - ${clip.duration.toFixed(2)}s`);
-                        });
-                        console.log('=============================');
-
-                        // Select animations by index (more reliable than name matching)
-                        // Testing different indices - [1] might be the actual clapping
+                        // Select idle animation by index
                         const IDLE_ANIMATION_INDEX = 2;     // Man_Idle (4.17s)
-                        const CLAPPING_ANIMATION_INDEX = 1; // Trying index 1 for clapping
 
                         if (gltf.animations[IDLE_ANIMATION_INDEX]) {
                             idleAction = mixer.clipAction(gltf.animations[IDLE_ANIMATION_INDEX]);
                             idleAction.loop = THREE.LoopRepeat;
-                            console.log(`Using animation [${IDLE_ANIMATION_INDEX}] "${gltf.animations[IDLE_ANIMATION_INDEX].name}" as IDLE (looping)`);
-                        }
-
-                        if (gltf.animations[CLAPPING_ANIMATION_INDEX]) {
-                            clappingAction = mixer.clipAction(gltf.animations[CLAPPING_ANIMATION_INDEX]);
-                            clappingAction.loop = THREE.LoopRepeat;  // Loop for debugging
-                            clappingAction.clampWhenFinished = false;
-                            console.log(`Using animation [${CLAPPING_ANIMATION_INDEX}] "${gltf.animations[CLAPPING_ANIMATION_INDEX].name}" as CLAPPING (looping for debug)`);
-                        }
-
-                        // Start the idle animation immediately
-                        if (idleAction) {
                             idleAction.play();
-                            console.log('✓ Started idle animation');
-                        } else {
-                            console.warn('⚠ No idle animation found!');
                         }
-
-                        if (!clappingAction) {
-                            console.warn('⚠ No clapping animation found!');
-                        }
-                    } else {
-                        console.warn('No animations found in GLB model');
                     }
 
                     // Store references for fallback if no animations
                     character.userData.head = headMesh || character;
                     character.userData.body = bodyMesh || character;
                     character.userData.isGLBModel = true;
-                    character.userData.hasAnimations = (idleAction || clappingAction);
-
-                    console.log('GLB character loaded:');
-                    console.log('  Head mesh found:', headMesh ? headMesh.name : 'Using entire character');
-                    console.log('  Body mesh found:', bodyMesh ? bodyMesh.name : 'Using entire character');
+                    character.userData.hasAnimations = (idleAction);
 
                     scene.add(character);
-
-                    // NO ANIMATIONS by default - will play once every 60 seconds
-                    console.log('Character positioned at z=2.5, facing monitor wall at z=0');
 
                     // Create surveillance room setup
                     createFloor();
@@ -687,21 +642,10 @@
                 },
                 // Progress callback
                 function(xhr) {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    // Loading progress
                 },
                 // Error callback - use fallback
                 function(error) {
-                    console.error('Error loading character model:', error);
-
-                    if (window.location.protocol === 'file:') {
-                        console.error('❌ CORS Error: Cannot load GLB files using file:// protocol');
-                        console.info('💡 Solution: Run a local web server instead:');
-                        console.info('   Option 1: python3 -m http.server 8000');
-                        console.info('   Option 2: npx http-server');
-                        console.info('   Then visit: http://localhost:8000/portfolio.html');
-                    }
-
-                    console.warn('Creating fallback placeholder character');
                     createFallbackCharacterAndSetup();
                 }
             );
@@ -739,9 +683,6 @@
 
             character.userData.head = head;
             character.userData.body = body;
-
-            console.log('Fallback character created - height: 3.0 units');
-            console.log('Position: z=2.5, facing monitor wall at z=0');
 
             // Create surveillance room setup
             createFloor();
@@ -865,8 +806,6 @@
                     monitorIndex++;
                 }
             }
-
-            console.log(`Created ${monitors.length} monitors in 2x3 wall grid`);
         }
 
         function createLargeTVMonitor(project, width, height) {
@@ -933,103 +872,9 @@
         // ==============================================
         // ANIMATION & INTERACTION
         // ==============================================
-        let lastAnimationTime = 0;
-        const ANIMATION_INTERVAL = 60000;  // 60 seconds
         let lastStaticTime = 0;
         let staticMonitor = null;
         let staticDuration = 0;
-        let manualAnimationTriggered = false;
-        let manualAnimationStartTime = 0;
-
-        function triggerCharacterAnimation() {
-            // Manually trigger character animation
-            manualAnimationTriggered = true;
-            manualAnimationStartTime = Date.now();
-            console.log('Character animation triggered by click');
-        }
-
-        function playCharacterAnimation() {
-            if (clappingAction && idleAction) {
-                console.log('Switching to CLAPPING animation');
-                console.log('  Duration:', clappingAction.getClip().duration.toFixed(2), 'seconds');
-
-                // Stop idle action and start clapping with proper weight management
-                idleAction.enabled = true;
-                clappingAction.enabled = true;
-
-                // Set initial weights
-                idleAction.setEffectiveWeight(1);
-                clappingAction.setEffectiveWeight(0);
-
-                // Reset and play clapping from start
-                clappingAction.reset();
-                clappingAction.play();
-
-                // Manual crossfade: transition weights over time
-                const fadeDuration = 0.3; // seconds
-                const fadeSteps = 30; // steps for smooth fade
-                const fadeInterval = (fadeDuration * 1000) / fadeSteps;
-                let fadeStep = 0;
-
-                const fadeToClapping = setInterval(() => {
-                    fadeStep++;
-                    const progress = fadeStep / fadeSteps;
-
-                    idleAction.setEffectiveWeight(1 - progress);
-                    clappingAction.setEffectiveWeight(progress);
-
-                    if (fadeStep >= fadeSteps) {
-                        clearInterval(fadeToClapping);
-                        // Ensure final states are correct
-                        idleAction.setEffectiveWeight(0);
-                        clappingAction.setEffectiveWeight(1);
-                    }
-                }, fadeInterval);
-
-                // After clapping finishes + hold time, fade back to idle
-                const clappingDuration = clappingAction.getClip().duration * 1000;  // Convert to ms
-                const holdTime = 10000;  // Hold completed animation for 10s to debug
-                setTimeout(() => {
-                    if (clappingAction && idleAction) {
-                        console.log('Switching back to IDLE animation');
-
-                        // Reset and play idle
-                        idleAction.reset();
-                        idleAction.play();
-
-                        // Manual crossfade back to idle
-                        const backFadeDuration = 0.5; // seconds
-                        const backFadeSteps = 30;
-                        const backFadeInterval = (backFadeDuration * 1000) / backFadeSteps;
-                        let backFadeStep = 0;
-
-                        const fadeToIdle = setInterval(() => {
-                            backFadeStep++;
-                            const progress = backFadeStep / backFadeSteps;
-
-                            clappingAction.setEffectiveWeight(1 - progress);
-                            idleAction.setEffectiveWeight(progress);
-
-                            if (backFadeStep >= backFadeSteps) {
-                                clearInterval(fadeToIdle);
-                                // Ensure final states are correct
-                                clappingAction.setEffectiveWeight(0);
-                                clappingAction.enabled = false;
-                                idleAction.setEffectiveWeight(1);
-                            }
-                        }, backFadeInterval);
-                    }
-                }, clappingDuration + holdTime);
-
-            } else if (clappingAction) {
-                // Only have clapping, no idle
-                clappingAction.reset();
-                clappingAction.play();
-                console.log('Playing CLAPPING animation (no idle)');
-            } else {
-                console.warn('No clapping animation available!');
-            }
-        }
 
         function animate() {
             requestAnimationFrame(animate);
@@ -1041,20 +886,6 @@
             // Update animation mixer for GLB animations
             if (mixer) {
                 mixer.update(delta);
-            }
-
-            // Character animation trigger - plays ONCE every 60 seconds OR when clicked
-            if (character) {
-                // Check for manual trigger (from click)
-                if (manualAnimationTriggered) {
-                    manualAnimationTriggered = false;  // Reset immediately
-                    playCharacterAnimation();
-                }
-                // Check for automatic 60-second trigger
-                else if (currentTime - lastAnimationTime > ANIMATION_INTERVAL) {
-                    lastAnimationTime = currentTime;
-                    playCharacterAnimation();
-                }
             }
 
             // Random static flicker on monitors
@@ -1121,20 +952,6 @@
             // Update raycaster
             raycaster.setFromCamera(mouse, camera);
 
-            // Check for character hover first
-            if (character) {
-                const characterIntersects = raycaster.intersectObject(character, true);
-                if (characterIntersects.length > 0) {
-                    document.body.style.cursor = 'pointer';
-                    // Reset monitor hover states
-                    monitors.forEach(monitor => {
-                        monitor.userData.isHovered = false;
-                    });
-                    hoveredMonitor = null;
-                    return;
-                }
-            }
-
             // Check for intersections with monitors
             const intersects = raycaster.intersectObjects(monitors, true);
 
@@ -1166,18 +983,6 @@
         function onMouseClick(event) {
             // Don't trigger if clicking on modal
             if (event.target.closest('#modal-overlay')) return;
-
-            // Check if character was clicked
-            raycaster.setFromCamera(mouse, camera);
-
-            if (character) {
-                const characterIntersects = raycaster.intersectObject(character, true);
-                if (characterIntersects.length > 0) {
-                    // Character was clicked - trigger animation
-                    triggerCharacterAnimation();
-                    return;
-                }
-            }
 
             // Check if monitor was clicked
             if (hoveredMonitor) {
