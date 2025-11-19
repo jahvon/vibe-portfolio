@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 3D Portfolio</title>
+    <title>HGSE Vibe Code Portfolio</title>
     <style>
         * {
             margin: 0;
@@ -298,56 +298,54 @@
         const projects = [
             {
                 id: 1,
-                title: "Neural Network Visualizer",
-                description: "An interactive 3D visualization of neural network architectures with real-time training animation. Explore how data flows through layers and watch the network learn.",
-                technologies: ["Three.js", "TensorFlow.js", "WebGL"],
-                liveUrl: "https://example.com/neural-viz",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ENeural Net%3C/text%3E%3C/svg%3E",
+                title: "Three Little Pigs",
+                description: "Build something that...tells a story: Interactive scene-by-scene recreation of the Three Little Pigs",
+                technologies: ["Claude Code", "React", "Framer Motion"],
+                thumbnail: "assets/three-pigs.png",
                 monitorPosition: { x: -2.5, y: 1.1, z: -1.3 }  // Back left
             },
             {
                 id: 2,
-                title: "Particle Physics Sandbox",
-                description: "A WebGL-powered particle physics playground where you can experiment with gravity, collision, and forces in real-time. Includes preset simulations and custom parameter controls.",
-                technologies: ["WebGL", "GLSL", "JavaScript"],
-                liveUrl: "https://example.com/particles",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EParticles%3C/text%3E%3C/svg%3E",
+                title: "Friendsgiving Coordinator",
+                description: "Build something that...makes your life easier: Part invitation, part potluck coordinator with AI generated recipes, menu balancing features, and a guest and admin dashboard for requesting and claiming dishes.",
+                technologies: ["Claude Code", "React", "Anthropic API", "Netlify Blobs"],
+                liveUrl: "https://github.com/jahvon/friendsgiving-coordinator",
+                thumbnail: "assets/friends.png",
                 monitorPosition: { x: -1, y: 1.1, z: -1.3 }  // Back center-left
             },
             {
                 id: 3,
-                title: "Generative Art Gallery",
-                description: "A curated collection of generative art pieces created with algorithms. Each piece is unique and generated in real-time using mathematical functions and random seeds.",
-                technologies: ["Canvas API", "P5.js", "React"],
-                liveUrl: "https://example.com/gen-art",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EGen Art%3C/text%3E%3C/svg%3E",
+                title: "Synth Maker",
+                description: "Build something that...sparks joy: Remix of a Figma Community project. Include the addition of track recording and a modified layout.",
+                technologies: ["Figma Make", "React"],
+                liveUrl: "https://sunny-bucket-08124625.figma.site",
+                thumbnail: "assets/synth.png",
                 monitorPosition: { x: 1, y: 1.1, z: -1.3 }  // Back center-right
             },
             {
                 id: 4,
-                title: "Sound Wave Sculptor",
-                description: "Create beautiful 3D forms from audio input. Upload music or use your microphone to generate real-time sculptural visualizations based on frequency and amplitude data.",
-                technologies: ["Web Audio API", "Three.js", "Tone.js"],
-                liveUrl: "https://example.com/sound-sculpt",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3ESound Wave%3C/text%3E%3C/svg%3E",
+                title: "Sleep and Activity Data Analysis",
+                description: "Build something that...answers a question: Interactive dashboard for analyzing my sleep and activity alongside local weather data. Data was exported from Withings and Google Fit for analysis.",
+                technologies: ["Claude Code", "Python", "Pandas", "Numpy", "Plotly"],
+                thumbnail: "assets/data.png",
                 monitorPosition: { x: 2.5, y: 1.1, z: -1.3 }  // Back right
             },
             {
                 id: 5,
-                title: "Shader Playground",
-                description: "An interactive GLSL shader editor with live preview. Experiment with fragment and vertex shaders, explore preset effects, and create mesmerizing visual effects.",
-                technologies: ["GLSL", "WebGL", "CodeMirror"],
-                liveUrl: "https://example.com/shaders",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EShaders%3C/text%3E%3C/svg%3E",
+                title: "Neopets Meets Pokemon",
+                description: "Build something that...invites play",
+                technologies: ["Claude Code", "React", "Phaser"],
+                liveUrl: "https://neopets.jahvon.dev",
+                thumbnail: "assets/neopets.png",
                 monitorPosition: { x: -2.9, y: 1.1, z: 0.8 }  // Left side
             },
             {
                 id: 6,
-                title: "Fractal Explorer",
-                description: "Dive deep into the infinite beauty of fractals. Navigate through Mandelbrot and Julia sets with smooth zooming, color customization, and high-resolution rendering.",
-                technologies: ["WebGL", "GLSL", "TypeScript"],
-                liveUrl: "https://example.com/fractals",
-                thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%231a1a2e' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%2300d4ff' font-size='24' font-family='Arial'%3EFractals%3C/text%3E%3C/svg%3E",
+                title: "Astrology Fortune Teller",
+                description: "Build something that...feels like magic",
+                technologies: ["Claude Code", "React", "Threejs", "Gemini API"],
+                liveUrl: "https://fortune.jahvon.dev",
+                thumbnail: "assets/fortune.png",
                 monitorPosition: { x: 2.9, y: 1.1, z: 0.8 }  // Right side
             }
         ];
@@ -581,7 +579,7 @@
                     const finalDeskSurfaceY = finalDeskHeight + (deskThickness / 2);
 
                     // Position character between camera and monitors, facing the wall
-                    character.position.set(0, 0, 2.5);  // In front of wall
+                    character.position.set(0, 0, 4);  // In front of wall
                     character.rotation.y = Math.PI;  // Face toward wall (negative Z direction)
 
                     // Enable shadows and find head/body for animation
@@ -797,7 +795,7 @@
                     monitor.userData.projectId = project.id;
                     monitor.userData.projectIndex = monitorIndex;
                     monitor.userData.originalY = yPos;
-                    monitor.userData.originalEmissive = 0.8;
+                    monitor.userData.originalEmissive = 0.3;  // Match reduced emissive intensity
                     monitor.userData.isHovered = false;
                     monitor.userData.isStatic = false;
 
@@ -835,13 +833,42 @@
             const screenMaterial = new THREE.MeshStandardMaterial({
                 map: texture,
                 emissive: 0x00aaff,  // Cyan/blue glow
-                emissiveIntensity: 0.8,  // Strong glow - main light source
+                emissiveIntensity: 0.3,  // Reduced intensity to see thumbnails better
                 roughness: 0.1,
                 metalness: 0.1
             });
             const screen = new THREE.Mesh(screenGeometry, screenMaterial);
             screen.position.z = frameThickness / 2 + 0.01;
             monitor.add(screen);
+
+            // Add title overlay
+            const titleGeometry = new THREE.PlaneGeometry(width - 0.2, 0.3);
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            // Semi-transparent background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Title text
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = 'bold 48px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(project.title, canvas.width / 2, canvas.height / 2);
+
+            const titleTexture = new THREE.CanvasTexture(canvas);
+            const titleMaterial = new THREE.MeshBasicMaterial({
+                map: titleTexture,
+                transparent: true,
+                opacity: 0.9
+            });
+            const titleOverlay = new THREE.Mesh(titleGeometry, titleMaterial);
+            titleOverlay.position.z = frameThickness / 2 + 0.02;
+            titleOverlay.position.y = -height / 2 + 0.2;  // Position at bottom of screen
+            monitor.add(titleOverlay);
 
             // Glow effect for hover
             const glowGeometry = new THREE.PlaneGeometry(width + 0.2, height + 0.2);
@@ -898,9 +925,9 @@
                 staticDuration = 1000 + Math.random() * 1000;  // 1-2 seconds
                 lastStaticTime = currentTime;
 
-                // Show static pattern (for now, just dim the screen significantly)
-                staticMonitor.userData.screen.material.emissiveIntensity = 0.3;
-                staticMonitor.userData.screen.material.emissive.setHex(0xffffff);  // White static
+                // Show static pattern - darker intensity
+                staticMonitor.userData.screen.material.emissiveIntensity = 0.1;
+                staticMonitor.userData.screen.material.emissive.setHex(0x666666);  // Dark gray static
             }
 
             // Clear static after duration
@@ -1028,7 +1055,24 @@
             // Populate modal
             document.getElementById('modal-title').textContent = project.title;
             document.getElementById('modal-description').textContent = project.description;
-            document.getElementById('modal-view-button').href = project.liveUrl;
+
+            // Show/hide "View Project" button based on liveUrl
+            const viewButton = document.getElementById('modal-view-button');
+            if (project.liveUrl) {
+                viewButton.href = project.liveUrl;
+                viewButton.style.display = 'inline-block';
+            } else {
+                viewButton.style.display = 'none';
+            }
+
+            // Show thumbnail
+            const screenshot = document.getElementById('modal-screenshot');
+            if (project.thumbnail) {
+                screenshot.src = project.thumbnail;
+                screenshot.style.display = 'block';
+            } else {
+                screenshot.style.display = 'none';
+            }
 
             // Add technology tags
             const techTagsContainer = document.getElementById('modal-tech-tags');
@@ -1039,15 +1083,6 @@
                 tag.textContent = tech;
                 techTagsContainer.appendChild(tag);
             });
-
-            // Show/hide screenshot
-            const screenshot = document.getElementById('modal-screenshot');
-            if (project.screenshot) {
-                screenshot.src = project.screenshot;
-                screenshot.style.display = 'block';
-            } else {
-                screenshot.style.display = 'none';
-            }
 
             // Show modal
             const modalOverlay = document.getElementById('modal-overlay');
